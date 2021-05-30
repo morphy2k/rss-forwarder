@@ -1,3 +1,5 @@
+[![Test](https://github.com/morphy2k/rss-forwarder/actions/workflows/test.yml/badge.svg)](https://github.com/morphy2k/rss-forwarder/actions/workflows/test.yml)
+
 # RSS Forwarder
 
 Checks RSS feeds for new entries and forwards them to different targets (sinks), like webhooks.
@@ -11,15 +13,12 @@ Checks RSS feeds for new entries and forwards them to different targets (sinks),
 ## Usage
 
 ```TXT
-rss-forwarder v0.1.0-alpha.1 by Markus Wiegand <mail@morphy2k.dev>
-Checks RSS feeds for new entries and forwards them.
+USAGE: rss-forwarder [OPTIONS]<CONFIG_FILE>
 
-    USAGE: rss-forwarder [OPTIONS] <CONFIG_FILE>
-
-    OPTIONS:
-    --debug             Enables debug mode
-    -h, --help          Show help information
-    -v, --version       Show version info
+OPTIONS:
+--debug             Enables debug mode
+-h, --help          Show help information
+-v, --version       Show version info
 ```
 
 ## Configuration
