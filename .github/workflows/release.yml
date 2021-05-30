@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Rust
+      run: |
+        rustup update stable
+        rustup default stable
+
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo
+
+    - name: Get version
+      run: cargo --version --verbose
+
+    - name: Login
+      run: cargo login ${{ secrets.CRATESIO_TOKEN }}
+
+    - name: Publish
+      run: cargo publish --verbose
+
+    - name: Logout
+      run: cargo logout
