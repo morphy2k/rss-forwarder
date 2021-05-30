@@ -10,30 +10,38 @@ Checks RSS feeds for new entries and forwards them to different targets (sinks),
 
 ## Usage
 
-```BASH
-rss-forwarder [OPTIONS] <CONFIG_FILE>
+```TXT
+rss-forwarder v0.1.0-alpha.1 by Markus Wiegand <mail@morphy2k.dev>
+Checks RSS feeds for new entries and forwards them.
+
+    USAGE: rss-forwarder [OPTIONS] <CONFIG_FILE>
+
+    OPTIONS:
+    --debug             Enables debug mode
+    -h, --help          Show help information
+    -v, --version       Show version info
 ```
 
-### Configuration
+## Configuration
 
 The feed configuration is passed as a TOML file.
 
-#### Feed
+### Feed
 
 | Field        | Type           | Description  |
 | ------------- |:-------------:| ----- |
 | `url`      | string | URL to the RSS feed |
-| `interval`      | string      |  Specifies the time interval between checks. E.g. `10m`, `3h`, `1d`. **(optional)** |
+| `interval`      | string      |   **(optional)** Specifies the time interval between checks. E.g. `10m`, `3h`, `1d`. |
 | `sink` | object | Sink options |
 
-#### Discord Config
+### Discord Sink
 
 | Field        | Type           | Description  |
 | ------------- |:-------------:| ----- |
 | `type` | string | Sink type |
 | `url` | string | Discord webhook url |
 
-#### Example
+### Example
 
 ```TOML
 # Feed 1
