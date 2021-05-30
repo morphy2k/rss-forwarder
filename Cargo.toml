@@ -4,6 +4,10 @@ description = "Checks RSS feeds for new entries and forwards them."
 version = "0.1.0-alpha.1"
 authors = ["Markus Wiegand <mail@morphy2k.dev>"]
 edition = "2018"
+keywords = ["rss", "cli", "webhook"]
+categories = ["command-line-utilities"]
+repository = "https://github.com/morphy2k/rss-forwarder"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
