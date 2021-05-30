@@ -1,4 +1,5 @@
 [![Test](https://github.com/morphy2k/rss-forwarder/actions/workflows/test.yml/badge.svg)](https://github.com/morphy2k/rss-forwarder/actions/workflows/test.yml)
+[![](https://meritbadge.herokuapp.com/rss-forwarder)](https://crates.io/crates/rss-forwarder)
 
 # RSS Forwarder
 
@@ -13,7 +14,7 @@ Checks RSS feeds for new entries and forwards them to different targets (sinks),
 ## Usage
 
 ```TXT
-USAGE: rss-forwarder [OPTIONS]<CONFIG_FILE>
+USAGE: rss-forwarder [OPTIONS] <CONFIG_FILE>
 
 OPTIONS:
 --debug             Enables debug mode
