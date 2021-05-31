@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
-    pub feed: HashMap<String, Feed>,
+    pub feeds: HashMap<String, Feed>,
 }
 
 #[derive(Debug, Deserialize)]

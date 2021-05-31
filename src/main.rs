@@ -1,5 +1,4 @@
 use config::{Config, Feed};
-use pico_args::Arguments;
 use sink::{discord::Discord, SinkType};
 use watcher::Watcher;
 
@@ -7,6 +6,7 @@ use std::{collections::HashMap, env, path::PathBuf, process};
 
 use error::Error;
 use log::info;
+use pico_args::Arguments;
 use tokio::{fs, task::JoinHandle};
 
 mod config;
@@ -45,7 +45,7 @@ async fn main() -> Result<()> {
     let file = fs::read(args.config).await?;
     let config = toml::from_slice::<Config>(&file[..])?;
 
-    let tasks = watch_feeds(config.feed)?;
+    let tasks = watch_feeds(config.feeds)?;
     for handle in tasks {
         handle.await??;
     }
@@ -104,9 +104,10 @@ fn parse_args() -> Result<Args> {
 
 type Task<T> = JoinHandle<Result<T>>;
 
-fn watch_feeds(feed: HashMap<String, Feed>) -> Result<Vec<Task<()>>> {
-    let mut tasks = Vec::with_capacity(feed.len());
-    for (name, config) in feed.into_iter() {
+fn watch_feeds(feeds: HashMap<String, Feed>) -> Result<Vec<Task<()>>> {
+    let mut tasks = Vec::with_capacity(feeds.len());
+
+    for (name, config) in feeds.into_iter() {
         let sink = match config.sink {
             SinkType::Discord { url } => Discord::new(url)?,
         };
