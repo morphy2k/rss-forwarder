@@ -1,5 +1,10 @@
-[![Test](https://github.com/morphy2k/rss-forwarder/actions/workflows/test.yml/badge.svg)](https://github.com/morphy2k/rss-forwarder/actions/workflows/test.yml)
-[![](https://meritbadge.herokuapp.com/rss-forwarder)](https://crates.io/crates/rss-forwarder)
+[![test-badge]][test-workflow]
+[![crates-badge]][crates.io]
+
+[test-workflow]: https://github.com/morphy2k/rss-forwarder/actions/workflows/test.yml
+[crates.io]: https://crates.io/crates/rss-forwarder
+[crates-badge]: https://img.shields.io/crates/v/rss-forwarder
+[test-badge]: https://github.com/morphy2k/rss-forwarder/actions/workflows/test.yml/badge.svg
 
 # RSS Forwarder
 
@@ -10,6 +15,7 @@ Checks RSS feeds for new entries and forwards them to different targets (sinks),
 | Sink        | Type value     |
 | ------------| :-------: |
 | [Discord](#discord-sink) | `discord` |
+*More is planned*
 
 ## Usage
 
