@@ -91,13 +91,9 @@ impl<'a, T: Sink> Watcher<T> {
     }
 
     async fn fetch(&self) -> Result<Channel> {
-        let body = self
-            .client
-            .get(self.url.as_ref())
-            .send()
-            .await?
-            .bytes()
-            .await?;
+        let res = self.client.get(self.url.as_ref()).send().await?;
+        let body = res.error_for_status()?.bytes().await?;
+
         let channel = Channel::read_from(&body[..])?;
 
         Ok(channel)
