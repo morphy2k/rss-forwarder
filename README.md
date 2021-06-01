@@ -45,18 +45,18 @@ The feed configuration is passed as a TOML file.
 
 ```TOML
 # Feed 1
-[feed.nyt-world]
+[feeds.nyt-world]
 url = "https://rss.nytimes.com/services/xml/rss/nyt/World.xml"
 interval = "10m"
 sink.type = "discord"
 sink.url = "https://discord.com/api/webhooks/84175.../OZdejNBCL1..."
 
 # Feed 2
-[feed.rust-blog]
+[feeds.rust-blog]
 url = "https://blog.rust-lang.org/feed.xml"
 interval = "1m"
 
-[feed.rust-blog.sink]
+[feeds.rust-blog.sink]
 type = "discord"
 url = "https://discord.com/api/webhooks/84175.../OZdejNBCL1..."
 ```
