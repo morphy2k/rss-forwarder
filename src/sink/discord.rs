@@ -1,9 +1,9 @@
-use crate::Result;
+use crate::{item::ExtItem, Result};
 
 use super::Sink;
 
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use reqwest::{Client, IntoUrl, Url};
 use serde::Serialize;
 
@@ -70,11 +70,10 @@ impl From<&rss::Item> for EmbedObject {
             title: item.title().unwrap().to_owned(),
             description: item.description().unwrap().to_owned(),
             url: item.link().unwrap().to_owned(),
-            timestamp: match item.pub_date() {
-                Some(v) => DateTime::parse_from_rfc2822(v).unwrap(),
-                None => Utc::now().into(),
-            }
-            .to_rfc3339(),
+            timestamp: item
+                .pub_date_as_datetime()
+                .unwrap_or_else(|| Utc::now().into())
+                .to_rfc3339(),
             author: EmbedAuthor::from(item),
             footer: EmbedFooter::from(item),
         }

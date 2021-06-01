@@ -26,6 +26,7 @@ thiserror = "1"
 humantime-serde = "1"
 toml = "0.5"
 pico-args = "0.4"
+blake3 = "0.3"
 
 [profile.release]
 lto = true

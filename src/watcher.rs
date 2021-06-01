@@ -1,8 +1,9 @@
-use crate::{sink::Sink, Result};
+use crate::{item::ExtItem, sink::Sink, Result};
 
 use std::time::Duration;
 
-use chrono::{DateTime, Utc};
+use blake3::Hash;
+use chrono::{DateTime, FixedOffset};
 use log::debug;
 use reqwest::{Client, IntoUrl, Url};
 use rss::{Channel, Item};
@@ -15,7 +16,8 @@ pub struct Watcher<T: Sink> {
     sink: T,
     interval: Duration,
     client: Client,
-    last_check: DateTime<Utc>,
+    last_date: Option<DateTime<FixedOffset>>,
+    last_hash: Option<Hash>,
 }
 
 impl<'a, T: Sink> Watcher<T> {
@@ -25,7 +27,8 @@ impl<'a, T: Sink> Watcher<T> {
             sink,
             interval: interval.unwrap_or(DEFAULT_INTERVAL),
             client: Client::builder().build()?,
-            last_check: Utc::now(),
+            last_date: None,
+            last_hash: None,
         })
     }
 
@@ -35,28 +38,46 @@ impl<'a, T: Sink> Watcher<T> {
         loop {
             interval.tick().await;
             let channel = self.fetch().await?;
+            let items = channel.items();
 
-            // pub_date conversion impl ?
-            let items = match self.get_new_items(channel.items()) {
+            if items.is_empty() {
+                continue;
+            }
+
+            let last = items.first().unwrap();
+
+            if self.last_hash.is_none() && self.last_date.is_none() {
+                self.last_date = last.pub_date_as_datetime();
+                self.last_hash = Some(last.compute_hash());
+            }
+
+            let news = match self.get_new_items(items) {
                 Some(v) => v,
                 None => continue,
             };
 
-            self.last_check = Utc::now();
+            debug!("pushing {} items from \"{}\"", news.len(), channel.title());
 
-            debug!("pushing {} items from \"{}\"", items.len(), channel.title());
+            self.sink.push(news).await?;
 
-            self.sink.push(items).await?;
+            self.last_date = last.pub_date_as_datetime();
+            self.last_hash = Some(last.compute_hash());
         }
     }
 
     fn get_new_items(&self, items: &'a [Item]) -> Option<&'a [Item]> {
         let mut idx = 0;
+
         for (i, item) in items.iter().enumerate() {
-            if DateTime::parse_from_rfc2822(item.pub_date().unwrap())
-                .unwrap()
-                .ge(&self.last_check)
-            {
+            let is_new = if self.last_date.is_some() && item.pub_date().is_some() {
+                item.pub_date_as_datetime()
+                    .unwrap()
+                    .gt(&self.last_date.unwrap())
+            } else {
+                item.compute_hash() != self.last_hash.unwrap()
+            };
+
+            if is_new {
                 idx = i;
             } else {
                 if i == 0 {

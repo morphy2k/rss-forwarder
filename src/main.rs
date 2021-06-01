@@ -11,6 +11,7 @@ use tokio::{fs, task::JoinHandle};
 
 mod config;
 mod error;
+mod item;
 mod sink;
 mod watcher;
 
@@ -46,7 +47,7 @@ async fn main() -> Result<()> {
     let config = toml::from_slice::<Config>(&file[..])?;
 
     let tasks = watch_feeds(config.feeds)?;
-    for handle in tasks {
+    for handle in tasks.into_iter() {
         handle.await??;
     }
 
