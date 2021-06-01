@@ -40,5 +40,5 @@ jobs:
     - name: Publish
       run: cargo publish --verbose
 
-    - name: Logout
-      run: cargo logout
+    # - name: Logout
+    #   run: cargo logout
