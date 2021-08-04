@@ -42,3 +42,45 @@ jobs:
 
     # - name: Logout
     #   run: cargo logout
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Rust
+      run: |
+        rustup update stable
+        rustup default stable
+
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-cargo
+
+    - name: Get version
+      run: cargo --version --verbose
+
+    - name: Build
+      run: |
+        cargo build --release
+        mv target/release/rss-forwarder rss-forwarder-linux-x86_64
+
+    - name: Upload
+      uses: actions/upload-artifact@v2
+      with:
+        name: Binary
+        path: rss-forwarder-linux-x86_64
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        draft: true
+        files: rss-forwarder-linux-x86_64
