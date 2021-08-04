@@ -21,12 +21,12 @@ async-trait = "0.1"
 rss = "1"
 chrono = "0.4"
 log = "0.4"
-env_logger = "0.8"
+env_logger = "0.9"
 thiserror = "1"
 humantime-serde = "1"
 toml = "0.5"
 pico-args = "0.4"
-blake3 = "0.3"
+blake3 = "1"
 
 [profile.release]
 lto = true
