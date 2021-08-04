@@ -34,18 +34,18 @@ The feed configuration is passed as a TOML file.
 
 ### Feed
 
-| Field        | Type           | Description  |
-| ------------- |:-------------:| ----- |
-| `url`      | string | URL to the RSS feed |
-| `interval`      | string      |   **(optional)** Specifies the time interval between checks. E.g. `10m`, `3h`, `1d`. |
-| `sink` | object | Sink options |
+| Field        | Type | Required | Default | Description  |
+| -------------|:----:|:--------:|:--------:| ----------- |
+| `url`      | string | Yes | | URL to the RSS feed |
+| `interval`      | string      | No | 60s |  Specifies the time interval between checks. E.g. `10m`, `3h`, `1d`. |
+| `sink` | object | Yes | | Sink options |
 
 ### Discord Sink
 
-| Field        | Type           | Description  |
-| ------------- |:-------------:| ----- |
-| `type` | string | Sink type |
-| `url` | string | Discord webhook url |
+| Field        | Type | Required | Default | Description  |
+| -------------|:----:|:--------:|:--------:| ----------- |
+| `type` | string | Yes | | Sink type |
+| `url` | string | Yes | | Discord webhook url |
 
 ### Example
 
