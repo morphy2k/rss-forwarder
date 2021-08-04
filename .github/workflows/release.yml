@@ -70,8 +70,9 @@ jobs:
 
     - name: Build
       run: |
-        cargo build --release
+        cargo build --release --verbose
         mv target/release/rss-forwarder rss-forwarder-linux-x86_64
+        strip rss-forwarder-linux-x86_64
 
     - name: Upload
       uses: actions/upload-artifact@v2
@@ -79,7 +80,7 @@ jobs:
         name: Binary
         path: rss-forwarder-linux-x86_64
 
-    - name: Release
+    - name: Create release
       uses: softprops/action-gh-release@v1
       with:
         draft: true
