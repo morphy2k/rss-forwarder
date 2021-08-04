@@ -922,7 +922,7 @@ dependencies = [
 
 [[package]]
 name = "rss-forwarder"
-version = "0.1.0-beta.0"
+version = "0.1.0-beta.1"
 dependencies = [
  "async-trait",
  "blake3",
