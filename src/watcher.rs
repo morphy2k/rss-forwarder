@@ -71,13 +71,11 @@ impl<'a, T: Sink> Watcher<T> {
             debug!("pushing {} items from \"{}\"", news.len(), channel.title());
 
             if let Err(err) = self.sink.push(news).await {
-                {
-                    if is_timeout(&err) {
-                        error!("Timeout while pushing items: {:?}", err);
-                        continue;
-                    } else {
-                        return Err(err);
-                    }
+                if is_timeout(&err) {
+                    error!("Timeout while pushing items: {:?}", err);
+                    continue;
+                } else {
+                    return Err(err);
                 }
             }
 
