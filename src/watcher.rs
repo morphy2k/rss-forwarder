@@ -1,10 +1,10 @@
-use crate::{item::ExtItem, sink::Sink, Result};
+use crate::{error::Error, item::ExtItem, sink::Sink, Result};
 
 use std::time::Duration;
 
 use blake3::Hash;
 use chrono::{DateTime, FixedOffset};
-use log::debug;
+use log::{debug, error};
 use reqwest::{Client, IntoUrl, Url};
 use rss::{Channel, Item};
 
@@ -37,7 +37,19 @@ impl<'a, T: Sink> Watcher<T> {
 
         loop {
             interval.tick().await;
-            let channel = self.fetch().await?;
+
+            let channel = match self.fetch().await {
+                Ok(c) => c,
+                Err(e) => {
+                    if is_timeout(&e) {
+                        error!("Timeout while getting items: {:?}", e);
+                        continue;
+                    } else {
+                        return Err(e);
+                    }
+                }
+            };
+
             let items = channel.items();
 
             if items.is_empty() {
@@ -58,7 +70,16 @@ impl<'a, T: Sink> Watcher<T> {
 
             debug!("pushing {} items from \"{}\"", news.len(), channel.title());
 
-            self.sink.push(news).await?;
+            if let Err(err) = self.sink.push(news).await {
+                {
+                    if is_timeout(&err) {
+                        error!("Timeout while pushing items: {:?}", err);
+                        continue;
+                    } else {
+                        return Err(err);
+                    }
+                }
+            }
 
             self.last_date = last.pub_date_as_datetime();
             self.last_hash = Some(last.compute_hash());
@@ -97,5 +118,12 @@ impl<'a, T: Sink> Watcher<T> {
         let channel = Channel::read_from(&body[..])?;
 
         Ok(channel)
+    }
+}
+
+fn is_timeout(err: &Error) -> bool {
+    match err {
+        Error::Request(e) => e.is_timeout(),
+        _ => false,
     }
 }
