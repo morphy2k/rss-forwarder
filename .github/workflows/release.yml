@@ -43,8 +43,8 @@ jobs:
     # - name: Logout
     #   run: cargo logout
 
-  build:
-    name: Build
+  release:
+    name: Build release
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -85,3 +85,23 @@ jobs:
       with:
         draft: true
         files: rss-forwarder-linux-x86_64
+
+  image:
+    name: Build image
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Login to Registry
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: docker build -t ghcr.io/${GITHUB_REPOSITORY}:${GITHUB_REF#refs/tags/v} .
+
+      - name: Publish
+        run: docker push --all-tags ghcr.io/${GITHUB_REPOSITORY}
+
+      - name: Logout
+        run: docker logout ghcr.io
