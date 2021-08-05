@@ -1,0 +1,26 @@
+[Unit]
+Description=RSS Forwarder
+Documentation=https://github.com/morphy2k/rss-forwarder
+Wants=network-online.target
+After=network-online.target
+AssertFileIsExecutable=/usr/local/bin/rss-forwarder
+AssertPathExists=/etc/rss-forwarder/config.toml
+
+[Service]
+WorkingDirectory=/usr/local/
+
+User=rss-forwarder-user
+Group=rss-forwarder-user
+
+EnvironmentFile=/etc/default/rss-forwarder
+
+ExecStart=/usr/local/bin/rss-forwarder /etc/rss-forwarder/config.toml
+
+Restart=always
+
+TasksMax=infinity
+
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target
