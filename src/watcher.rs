@@ -21,12 +21,17 @@ pub struct Watcher<T: Sink> {
 }
 
 impl<'a, T: Sink> Watcher<T> {
-    pub fn new<U: IntoUrl>(url: U, sink: T, interval: Option<Duration>) -> Result<Self> {
+    pub fn new<U: IntoUrl>(
+        url: U,
+        sink: T,
+        interval: Option<Duration>,
+        client: Client,
+    ) -> Result<Self> {
         Ok(Self {
             url: url.into_url()?,
             sink,
             interval: interval.unwrap_or(DEFAULT_INTERVAL),
-            client: Client::builder().build()?,
+            client,
             last_date: None,
             last_hash: None,
         })

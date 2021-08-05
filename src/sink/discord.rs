@@ -14,10 +14,10 @@ pub struct Discord {
 }
 
 impl Discord {
-    pub fn new<T: IntoUrl>(url: T) -> Result<Self> {
+    pub fn new<T: IntoUrl>(url: T, client: Client) -> Result<Self> {
         Ok(Self {
             url: url.into_url()?,
-            client: Client::builder().build()?,
+            client,
         })
     }
 }

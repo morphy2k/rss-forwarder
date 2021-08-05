@@ -1,19 +1,20 @@
-use config::{Config, Feed};
-use sink::{discord::Discord, SinkType};
-use watcher::Watcher;
-
-use std::{collections::HashMap, env, path::PathBuf, process};
-
-use error::Error;
-use log::info;
-use pico_args::Arguments;
-use tokio::{fs, task::JoinHandle};
-
 mod config;
 mod error;
 mod item;
 mod sink;
 mod watcher;
+
+use config::{Config, Feed};
+use sink::{discord::Discord, SinkType};
+use watcher::Watcher;
+
+use std::{collections::HashMap, env, path::PathBuf, process, time::Duration};
+
+use error::Error;
+use log::info;
+use pico_args::Arguments;
+use reqwest::Client;
+use tokio::{fs, task::JoinHandle};
 
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
@@ -46,12 +47,27 @@ async fn main() -> Result<()> {
     let file = fs::read(args.config).await?;
     let config = toml::from_slice::<Config>(&file[..])?;
 
-    let tasks = watch_feeds(config.feeds)?;
+    let client = build_client()?;
+
+    let tasks = watch_feeds(config.feeds, client)?;
     for handle in tasks.into_iter() {
         handle.await??;
     }
 
     Ok(())
+}
+
+const USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
+
+const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
+
+fn build_client() -> Result<Client> {
+    let client = Client::builder()
+        .timeout(DEFAULT_TIMEOUT)
+        .user_agent(USER_AGENT)
+        .build()?;
+
+    Ok(client)
 }
 
 const NAME: &str = env!("CARGO_PKG_NAME");
@@ -105,15 +121,15 @@ fn parse_args() -> Result<Args> {
 
 type Task<T> = JoinHandle<Result<T>>;
 
-fn watch_feeds(feeds: HashMap<String, Feed>) -> Result<Vec<Task<()>>> {
+fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<Vec<Task<()>>> {
     let mut tasks = Vec::with_capacity(feeds.len());
 
     for (name, config) in feeds.into_iter() {
         let sink = match config.sink {
-            SinkType::Discord { url } => Discord::new(url)?,
+            SinkType::Discord { url } => Discord::new(url, client.clone())?,
         };
 
-        let mut watcher = Watcher::new(config.url, sink, config.interval)?;
+        let mut watcher = Watcher::new(config.url, sink, config.interval, client.clone())?;
 
         tasks.push(tokio::spawn(async move {
             info!("Watching {}", name);
