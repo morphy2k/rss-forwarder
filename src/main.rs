@@ -4,17 +4,18 @@ mod item;
 mod sink;
 mod watcher;
 
-use config::{Config, Feed};
-use sink::{discord::Discord, SinkType};
-use watcher::Watcher;
+use crate::config::{Config, Feed};
+use crate::sink::{discord::Discord, SinkType};
+use crate::watcher::Watcher;
 
 use std::{collections::HashMap, env, path::PathBuf, process, time::Duration};
 
 use error::Error;
 use futures::future;
+use log::{error, info};
 use pico_args::Arguments;
 use reqwest::Client;
-use tokio::{fs, task::JoinHandle};
+use tokio::{fs, signal, sync::broadcast, task::JoinHandle};
 
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
@@ -123,6 +124,8 @@ type Task<T> = JoinHandle<Result<T>>;
 fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<Vec<Task<()>>> {
     let mut tasks = Vec::with_capacity(feeds.len());
 
+    let (tx, _) = broadcast::channel(tasks.capacity());
+
     for (name, config) in feeds.into_iter() {
         let sink = match config.sink {
             SinkType::Discord { url } => Discord::new(url, client.clone())?,
@@ -130,11 +133,26 @@ fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<Vec<Task<
 
         let mut watcher = Watcher::new(config.url, sink, config.interval, client.clone())?;
 
+        let rx = tx.subscribe();
+
         tasks.push(tokio::spawn(async move {
-            info!("Watching {}", name);
-            watcher.watch().await
+            info!("Start watcher for \"{}\"", name);
+
+            if let Err(e) = watcher.watch(rx).await {
+                error!("Watcher for \"{}\" has an error: {:?}", name, &e);
+                return Err(e);
+            }
+
+            info!("Watcher for \"{}\" has stopped", name);
+
+            Ok(())
         }));
     }
+
+    tokio::spawn(async move {
+        signal::ctrl_c().await.unwrap();
+        tx.send(()).unwrap();
+    });
 
     Ok(tasks)
 }

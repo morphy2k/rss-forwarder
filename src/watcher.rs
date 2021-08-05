@@ -7,6 +7,7 @@ use chrono::{DateTime, FixedOffset};
 use log::{debug, error};
 use reqwest::{Client, IntoUrl, Url};
 use rss::{Channel, Item};
+use tokio::sync::broadcast::Receiver;
 
 const DEFAULT_INTERVAL: Duration = Duration::from_secs(60);
 
@@ -37,11 +38,14 @@ impl<'a, T: Sink> Watcher<T> {
         })
     }
 
-    pub async fn watch(&mut self) -> Result<()> {
+    pub async fn watch(&mut self, mut kill: Receiver<()>) -> Result<()> {
         let mut interval = tokio::time::interval(self.interval);
 
         loop {
-            interval.tick().await;
+            tokio::select! {
+                _ = interval.tick() => {},
+                _ = kill.recv() => return Ok(()),
+            };
 
             let channel = match self.fetch().await {
                 Ok(c) => c,
