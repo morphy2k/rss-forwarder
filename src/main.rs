@@ -11,7 +11,7 @@ use watcher::Watcher;
 use std::{collections::HashMap, env, path::PathBuf, process, time::Duration};
 
 use error::Error;
-use log::info;
+use futures::future;
 use pico_args::Arguments;
 use reqwest::Client;
 use tokio::{fs, task::JoinHandle};
@@ -50,9 +50,8 @@ async fn main() -> Result<()> {
     let client = build_client()?;
 
     let tasks = watch_feeds(config.feeds, client)?;
-    for handle in tasks.into_iter() {
-        handle.await??;
-    }
+
+    future::try_join_all(tasks).await?;
 
     Ok(())
 }
