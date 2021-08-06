@@ -15,7 +15,12 @@ use futures::future;
 use log::{error, info};
 use pico_args::Arguments;
 use reqwest::Client;
-use tokio::{fs, signal, sync::broadcast, task::JoinHandle};
+use tokio::{
+    fs,
+    signal::unix::{signal, SignalKind},
+    sync::broadcast,
+    task::JoinHandle,
+};
 
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
@@ -150,7 +155,14 @@ fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<Vec<Task<
     }
 
     tokio::spawn(async move {
-        signal::ctrl_c().await.unwrap();
+        let mut sig_int = signal(SignalKind::interrupt()).unwrap();
+        let mut sig_term = signal(SignalKind::terminate()).unwrap();
+
+        tokio::select! {
+            _ = sig_int.recv() => {},
+            _ = sig_term.recv() => {},
+        };
+
         tx.send(()).unwrap();
     });
 
