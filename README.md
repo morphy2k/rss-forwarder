@@ -15,7 +15,34 @@ Checks RSS feeds for new entries and forwards them to different targets (sinks),
 | Sink        | Type value     |
 | ------------| :-------: |
 | [Discord](#discord-sink) | `discord` |
+
 *More is planned*
+
+## Installation
+
+### Official binary
+
+```BASH
+curl -O https://github.com/morphy2k/rss-forwarder/releases/download/<VERSION>/rss-forwarder-linux-x86_64
+sudo chmod +x rss-forwarder-linux-x86_64
+sudo mv rss-forwarder-linux-x86_64 /usr/local/bin/rss-forwarder
+```
+
+*Replace `<VERSION>` with an release tag from [releases](https://github.com/morphy2k/rss-forwarder/releases)*
+
+### Cargo
+
+```BASH
+cargo install rss-forwarder
+```
+
+### Container image
+
+```BASH
+docker pull ghcr.io/morphy2k/rss-forwarder:<VERSION>
+```
+
+*Replace `<VERSION>` with an image tag from [container package](https://github.com/morphy2k/rss-forwarder/pkgs/container/rss-forwarder)*
 
 ## Usage
 
@@ -27,6 +54,8 @@ OPTIONS:
 -h, --help          Show help information
 -v, --version       Show version info
 ```
+
+[Examples](example)
 
 ## Configuration
 
