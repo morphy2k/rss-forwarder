@@ -38,20 +38,34 @@ async fn main() -> Result<()> {
     let args = match parse_args() {
         Ok(v) => v,
         Err(e) => {
-            eprintln!("Error: {}", e);
+            eprintln!("Argument error: {:?}", e);
             process::exit(1);
         }
     };
 
-    if args.debug {
-        env::set_var("RUST_LOG", "debug");
-    } else if env::var("RUST_LOG").is_err() {
-        env::set_var("RUST_LOG", "info");
+    if env::var("RUST_LOG").is_err() {
+        if args.debug {
+            env::set_var("RUST_LOG", "debug");
+        } else {
+            env::set_var("RUST_LOG", "info");
+        }
     }
     env_logger::init();
 
-    let file = fs::read(args.config).await?;
-    let config = toml::from_slice::<Config>(&file[..])?;
+    let file = match fs::read(args.config).await {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("Error while reading config: {:?}", e);
+            process::exit(1);
+        }
+    };
+    let config = match toml::from_slice::<Config>(&file[..]) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("Error while parsing config: {:?}", e);
+            process::exit(1);
+        }
+    };
 
     let client = build_client()?;
 
