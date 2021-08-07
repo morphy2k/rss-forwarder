@@ -13,8 +13,6 @@ LABEL maintainer="Markus Wiegand <mail@morphy2k.dev>"
 
 LABEL org.opencontainers.image.source="https://github.com/morphy2k/rss-forwarder"
 
-EXPOSE 8080
-
 COPY --from=builder /usr/local/cargo/bin/rss-forwarder /usr/local/bin/rss-forwarder
 
 CMD ["rss-forwarder", "/data/config.toml"]
