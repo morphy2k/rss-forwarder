@@ -43,8 +43,9 @@ impl<'a, T: Sink> Watcher<T> {
 
         loop {
             tokio::select! {
-                _ = interval.tick() => {},
+                biased;
                 _ = kill.recv() => return Ok(()),
+                _ = interval.tick() => {},
             };
 
             let channel = match self.fetch().await {
