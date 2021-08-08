@@ -67,8 +67,8 @@ struct EmbedObject {
 impl From<&rss::Item> for EmbedObject {
     fn from(item: &rss::Item) -> Self {
         Self {
-            title: item.title().unwrap().to_owned(),
-            description: item.description().unwrap().to_owned(),
+            title: item.title_as_text().unwrap(),
+            description: item.description_as_text().unwrap(),
             url: item.link().unwrap().to_owned(),
             timestamp: item
                 .pub_date_as_datetime()
