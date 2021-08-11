@@ -22,13 +22,13 @@ Checks RSS feeds for new entries and forwards them to different targets (sinks),
 
 ### Official binary
 
+[`jq`](https://stedolan.github.io/jq/) required!
+
 ```BASH
-curl -O https://github.com/morphy2k/rss-forwarder/releases/download/<VERSION>/rss-forwarder-linux-x86_64
-sudo chmod +x rss-forwarder-linux-x86_64
+curl --proto '=https' --tlsv1.3 -LO "$(curl --proto '=https' --tlsv1.3 -sSf https://api.github.com/repos/morphy2k/rss-forwarder/releases/latest | jq -r ".assets[] | select(.name == \"rss-forwarder-linux-x86_64\") | .browser_download_url")"
+chmod +x rss-forwarder-linux-x86_64
 sudo mv rss-forwarder-linux-x86_64 /usr/local/bin/rss-forwarder
 ```
-
-*Replace `<VERSION>` with an release tag from [releases](https://github.com/morphy2k/rss-forwarder/releases)*
 
 ### Cargo
 
@@ -38,11 +38,7 @@ cargo install rss-forwarder
 
 ### Container image
 
-```BASH
-docker pull ghcr.io/morphy2k/rss-forwarder:<VERSION>
-```
-
-*Replace `<VERSION>` with an image tag from [container package](https://github.com/morphy2k/rss-forwarder/pkgs/container/rss-forwarder)*
+See [GitHub container package](https://github.com/morphy2k/rss-forwarder/pkgs/container/rss-forwarder)
 
 ## Usage
 
