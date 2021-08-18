@@ -43,15 +43,16 @@ impl<'a, T: Sink> Watcher<T> {
 
         loop {
             tokio::select! {
-                _ = interval.tick() => {},
+                biased;
                 _ = kill.recv() => return Ok(()),
+                _ = interval.tick() => {},
             };
 
             let channel = match self.fetch().await {
                 Ok(c) => c,
                 Err(e) => {
                     if is_timeout(&e) {
-                        error!("Timeout while getting items: {:?}", e);
+                        error!("Timeout while getting items: {}", e);
                         continue;
                     } else {
                         return Err(e);
@@ -81,7 +82,7 @@ impl<'a, T: Sink> Watcher<T> {
 
             if let Err(err) = self.sink.push(news).await {
                 if is_timeout(&err) {
-                    error!("Timeout while pushing items: {:?}", err);
+                    error!("Timeout while pushing items: {}", err);
                     continue;
                 } else {
                     return Err(err);

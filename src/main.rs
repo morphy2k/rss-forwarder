@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
     let args = match parse_args() {
         Ok(v) => v,
         Err(e) => {
-            eprintln!("Argument error: {:?}", e);
+            eprintln!("Argument error: {}", e);
             process::exit(1);
         }
     };
@@ -55,14 +55,14 @@ async fn main() -> Result<()> {
     let file = match fs::read(args.config).await {
         Ok(f) => f,
         Err(e) => {
-            eprintln!("Error while reading config: {:?}", e);
+            eprintln!("Error while reading config: {}", e);
             process::exit(1);
         }
     };
     let config = match toml::from_slice::<Config>(&file[..]) {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("Error while parsing config: {:?}", e);
+            eprintln!("Error while parsing config: {}", e);
             process::exit(1);
         }
     };
@@ -158,7 +158,7 @@ fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<Vec<Task<
             info!("Start watcher for \"{}\"", name);
 
             if let Err(e) = watcher.watch(rx).await {
-                error!("Watcher for \"{}\" has an error: {:?}", name, &e);
+                error!("Watcher for \"{}\" stopped with an error: {}", name, &e);
                 return Err(e);
             }
 

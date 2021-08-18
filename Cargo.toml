@@ -1,7 +1,7 @@
 [package]
 name = "rss-forwarder"
 description = "Checks RSS feeds for new entries and forwards them."
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Markus Wiegand <mail@morphy2k.dev>"]
 edition = "2018"
 keywords = ["rss", "cli", "webhook"]
@@ -14,12 +14,19 @@ license = "MIT"
 
 [dependencies]
 jemallocator = "0.3"
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = [
+    "rt-multi-thread",
+    "fs",
+    "sync",
+    "signal",
+    "macros",
+    "time",
+] }
 reqwest = { version = "0.11", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
 futures = { version = "0.3", default-features = false, features = ["std"] }
 async-trait = "0.1"
-rss = "1"
+rss = { version = "1", default-features = false }
 chrono = "0.4"
 log = "0.4"
 env_logger = "0.9"
