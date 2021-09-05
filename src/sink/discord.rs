@@ -3,7 +3,7 @@ use crate::{item::ExtItem, Result};
 use super::Sink;
 
 use async_trait::async_trait;
-use chrono::Utc;
+use chrono::{DateTime, FixedOffset, Utc};
 use reqwest::{Client, IntoUrl, Url};
 use serde::Serialize;
 
@@ -45,6 +45,10 @@ impl Sink for Discord {
 
         Ok(())
     }
+
+    async fn shutdown(self) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -59,7 +63,7 @@ struct EmbedObject {
     title: String,
     description: String,
     url: String,
-    timestamp: String,
+    timestamp: DateTime<FixedOffset>,
     author: EmbedAuthor,
     footer: EmbedFooter,
 }
@@ -72,8 +76,7 @@ impl From<&rss::Item> for EmbedObject {
             url: item.link().unwrap().to_owned(),
             timestamp: item
                 .pub_date_as_datetime()
-                .unwrap_or_else(|| Utc::now().into())
-                .to_rfc3339(),
+                .unwrap_or_else(|| Utc::now().into()),
             author: EmbedAuthor::from(item),
             footer: EmbedFooter::from(item),
         }

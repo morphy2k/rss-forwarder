@@ -1,5 +1,7 @@
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
+    #[error("feed item is invalid: {0}")]
+    InvalidItem(String),
     #[error("task error: {0}")]
     Task(#[from] tokio::task::JoinError),
     #[error("io error: {0}")]

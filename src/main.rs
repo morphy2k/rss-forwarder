@@ -4,9 +4,10 @@ mod item;
 mod sink;
 mod watcher;
 
-use crate::config::{Config, Feed};
-use crate::sink::{discord::Discord, SinkType};
-use crate::watcher::Watcher;
+use crate::{
+    config::{Config, Feed},
+    watcher::Watcher,
+};
 
 use std::{collections::HashMap, env, path::PathBuf, process, time::Duration};
 
@@ -146,11 +147,8 @@ fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<Vec<Task<
     let (tx, _) = broadcast::channel(tasks.capacity());
 
     for (name, config) in feeds.into_iter() {
-        let sink = match config.sink {
-            SinkType::Discord { url } => Discord::new(url, client.clone())?,
-        };
-
-        let mut watcher = Watcher::new(config.url, sink, config.interval, client.clone())?;
+        let sink = config.sink.sink(&client)?;
+        let watcher = Watcher::new(config.url, sink, config.interval, client.clone())?;
 
         let rx = tx.subscribe();
 
