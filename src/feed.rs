@@ -1,9 +1,6 @@
 use crate::error::FeedError;
 
-use std::{
-    convert::{TryFrom, TryInto},
-    io::BufRead,
-};
+use std::{convert::TryFrom, io::BufRead};
 
 use blake3::{Hash, Hasher};
 use chrono::{DateTime, FixedOffset};
@@ -41,12 +38,12 @@ impl Feed {
     }
 
     pub fn items(&self) -> Result<Vec<Item>, FeedError> {
-        let items: Result<Vec<Item>, FeedError> = match self {
-            Feed::Rss(c) => c.items().iter().map(|v| v.try_into()).collect(),
-            Feed::Atom(f) => f.entries().iter().map(|v| v.try_into()).collect(),
+        let result: Result<Vec<Item>, FeedError> = match self {
+            Feed::Rss(c) => c.items().iter().map(Item::try_from).collect(),
+            Feed::Atom(f) => f.entries().iter().map(Item::try_from).collect(),
         };
 
-        let mut items = items?;
+        let mut items = result?;
         items.sort_unstable_by(|a, b| b.date.cmp(&a.date));
 
         Ok(items)

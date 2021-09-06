@@ -80,7 +80,7 @@ impl<'a, T: Sink> Watcher<T> {
 
             debug!("pushing {} items from \"{}\"", news.len(), feed.title());
 
-            if let Err(err) = self.sink.push(&news).await {
+            if let Err(err) = self.sink.push(news).await {
                 if is_timeout(&err) {
                     error!("Timeout while pushing items: {}", err);
                     continue;
@@ -114,9 +114,9 @@ impl<'a, T: Sink> Watcher<T> {
         let res = self.client.get(self.url.as_ref()).send().await?;
         let body = res.error_for_status()?.bytes().await?;
 
-        let channel = Feed::read_from(&body[..])?;
+        let feed = Feed::read_from(&body[..])?;
 
-        Ok(channel)
+        Ok(feed)
     }
 }
 

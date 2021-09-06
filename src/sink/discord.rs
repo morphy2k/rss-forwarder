@@ -6,7 +6,7 @@ use crate::{
 use super::Sink;
 
 use async_trait::async_trait;
-use chrono::{DateTime, FixedOffset, Utc};
+use chrono::{DateTime, FixedOffset};
 use reqwest::{Client, IntoUrl, Url};
 use serde::Serialize;
 
