@@ -1,4 +1,4 @@
-use crate::Result;
+use crate::{feed::Item, Result};
 
 use async_trait::async_trait;
 use reqwest::Client;
@@ -36,7 +36,7 @@ impl SinkOptions {
 
 #[async_trait]
 pub trait Sink {
-    async fn push(&self, items: &[rss::Item]) -> Result<()>;
+    async fn push(&self, items: &[Item]) -> Result<()>;
 
     async fn shutdown(mut self) -> Result<()>;
 }
@@ -50,7 +50,7 @@ pub enum AnySink {
 #[async_trait]
 impl Sink for AnySink {
     #[inline]
-    async fn push(&self, items: &[rss::Item]) -> Result<()> {
+    async fn push(&self, items: &[Item]) -> Result<()> {
         match self {
             AnySink::Discord(s) => s.push(items).await,
             AnySink::Custom(s) => s.push(items).await,
