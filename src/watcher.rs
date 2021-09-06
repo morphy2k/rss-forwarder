@@ -1,12 +1,15 @@
-use crate::{error::Error, item::ExtItem, sink::Sink, Result};
+use crate::{
+    error::Error,
+    feed::{Feed, Item},
+    sink::Sink,
+    Result,
+};
 
 use std::time::Duration;
 
-use blake3::Hash;
 use chrono::{DateTime, FixedOffset};
 use log::{debug, error};
 use reqwest::{Client, IntoUrl, Url};
-use rss::{Channel, Item};
 use tokio::sync::broadcast::Receiver;
 
 const DEFAULT_INTERVAL: Duration = Duration::from_secs(60);
@@ -18,7 +21,6 @@ pub struct Watcher<T: Sink> {
     interval: Duration,
     client: Client,
     last_date: Option<DateTime<FixedOffset>>,
-    last_hash: Option<Hash>,
 }
 
 impl<'a, T: Sink> Watcher<T> {
@@ -34,7 +36,6 @@ impl<'a, T: Sink> Watcher<T> {
             interval: interval.unwrap_or(DEFAULT_INTERVAL),
             client,
             last_date: None,
-            last_hash: None,
         })
     }
 
@@ -48,7 +49,7 @@ impl<'a, T: Sink> Watcher<T> {
                 _ = interval.tick() => {},
             };
 
-            let channel = match self.fetch().await {
+            let feed = match self.fetch().await {
                 Ok(c) => c,
                 Err(e) => {
                     if is_timeout(&e) {
@@ -60,7 +61,7 @@ impl<'a, T: Sink> Watcher<T> {
                 }
             };
 
-            let items = channel.items();
+            let items = feed.items()?;
 
             if items.is_empty() {
                 continue;
@@ -68,19 +69,18 @@ impl<'a, T: Sink> Watcher<T> {
 
             let last = items.first().unwrap();
 
-            if self.last_hash.is_none() && self.last_date.is_none() {
-                self.last_date = last.pub_date_as_datetime();
-                self.last_hash = Some(last.compute_hash());
+            if self.last_date.is_none() {
+                self.last_date = last.date.into();
             }
 
-            let news = match self.get_new_items(items) {
+            let news = match self.get_new_items(&items) {
                 Some(v) => v,
                 None => continue,
             };
 
-            debug!("pushing {} items from \"{}\"", news.len(), channel.title());
+            debug!("pushing {} items from \"{}\"", news.len(), feed.title());
 
-            if let Err(err) = self.sink.push(news).await {
+            if let Err(err) = self.sink.push(&news).await {
                 if is_timeout(&err) {
                     error!("Timeout while pushing items: {}", err);
                     continue;
@@ -89,8 +89,7 @@ impl<'a, T: Sink> Watcher<T> {
                 }
             }
 
-            self.last_date = last.pub_date_as_datetime();
-            self.last_hash = Some(last.compute_hash());
+            self.last_date = last.date.into();
         }
     }
 
@@ -98,15 +97,7 @@ impl<'a, T: Sink> Watcher<T> {
         let mut idx = 0;
 
         for (i, item) in items.iter().enumerate() {
-            let is_new = if self.last_date.is_some() && item.pub_date().is_some() {
-                item.pub_date_as_datetime()
-                    .unwrap()
-                    .gt(&self.last_date.unwrap())
-            } else {
-                item.compute_hash() != self.last_hash.unwrap()
-            };
-
-            if is_new {
+            if item.date.gt(&self.last_date.unwrap()) {
                 idx = i;
             } else {
                 if i == 0 {
@@ -119,11 +110,11 @@ impl<'a, T: Sink> Watcher<T> {
         Some(&items[..=idx])
     }
 
-    async fn fetch(&self) -> Result<Channel> {
+    async fn fetch(&self) -> Result<Feed> {
         let res = self.client.get(self.url.as_ref()).send().await?;
         let body = res.error_for_status()?.bytes().await?;
 
-        let channel = Channel::read_from(&body[..])?;
+        let channel = Feed::read_from(&body[..])?;
 
         Ok(channel)
     }

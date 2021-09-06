@@ -1,9 +1,12 @@
-use crate::{item::ExtItem, Result};
+use crate::{
+    feed::{ExtItem, Item},
+    Result,
+};
 
 use super::Sink;
 
 use async_trait::async_trait;
-use chrono::Utc;
+use chrono::{DateTime, FixedOffset, Utc};
 use reqwest::{Client, IntoUrl, Url};
 use serde::Serialize;
 
@@ -24,7 +27,7 @@ impl Discord {
 
 #[async_trait]
 impl Sink for Discord {
-    async fn push(&self, items: &[rss::Item]) -> Result<()> {
+    async fn push(&self, items: &[Item]) -> Result<()> {
         let length = items.len();
         let limit = 10_usize;
         let chunk_count = (length as f64 / limit as f64).ceil() as usize;
@@ -59,21 +62,22 @@ struct EmbedObject {
     title: String,
     description: String,
     url: String,
-    timestamp: String,
+    timestamp: DateTime<FixedOffset>,
     author: EmbedAuthor,
     footer: EmbedFooter,
 }
 
-impl From<&rss::Item> for EmbedObject {
-    fn from(item: &rss::Item) -> Self {
+impl From<&Item> for EmbedObject {
+    fn from(item: &Item) -> Self {
         Self {
-            title: item.title_as_text().unwrap(),
-            description: item.description_as_text().unwrap(),
-            url: item.link().unwrap().to_owned(),
-            timestamp: item
-                .pub_date_as_datetime()
-                .unwrap_or_else(|| Utc::now().into())
-                .to_rfc3339(),
+            title: item.title_as_text(),
+            description: item.description_as_text().unwrap_or_default(),
+            url: item
+                .links
+                .first()
+                .map(|s| s.to_string())
+                .unwrap_or_default(),
+            timestamp: item.date,
             author: EmbedAuthor::from(item),
             footer: EmbedFooter::from(item),
         }
@@ -83,15 +87,20 @@ impl From<&rss::Item> for EmbedObject {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct EmbedAuthor {
-    name: Option<String>,
+    name: String,
     url: Option<String>,
 }
 
-impl From<&rss::Item> for EmbedAuthor {
-    fn from(item: &rss::Item) -> Self {
+impl From<&Item> for EmbedAuthor {
+    fn from(item: &Item) -> Self {
+        let author = item.authors.first();
+
         Self {
-            name: item.author().map(|v| v.to_string()),
-            url: None,
+            name: author.map(|v| v.name.to_owned()).unwrap_or_default(),
+            url: match author {
+                Some(v) => v.uri.to_owned(),
+                None => None,
+            },
         }
     }
 }
@@ -108,14 +117,10 @@ struct EmbedFooter {
     text: String,
 }
 
-impl From<&rss::Item> for EmbedFooter {
-    fn from(item: &rss::Item) -> Self {
+impl From<&Item> for EmbedFooter {
+    fn from(_: &Item) -> Self {
         Self {
-            text: match item.source() {
-                Some(v) => v.title().unwrap_or(""),
-                None => "",
-            }
-            .to_string(),
+            text: "".to_string(),
         }
     }
 }
