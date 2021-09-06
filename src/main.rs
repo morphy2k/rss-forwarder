@@ -1,6 +1,6 @@
 mod config;
 mod error;
-mod item;
+mod feed;
 mod sink;
 mod watcher;
 
