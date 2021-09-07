@@ -75,7 +75,7 @@ impl TryFrom<&rss::Item> for Item {
             links: value.link.to_owned().map(|s| vec![s]).unwrap_or_default(),
             date: match value.pub_date() {
                 Some(v) => DateTime::parse_from_rfc2822(v).unwrap(),
-                None => return Err(FeedError::Item("rss pube date is missing".to_string())),
+                None => return Err(FeedError::Item("rss pub date is missing".to_string())),
             },
             authors: vec![Author::try_from(value)?],
         };
