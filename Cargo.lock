@@ -1042,6 +1042,7 @@ dependencies = [
  "reqwest",
  "rss",
  "serde",
+ "serde_json",
  "thiserror",
  "tokio",
  "toml",

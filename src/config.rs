@@ -1,4 +1,4 @@
-use crate::sink::SinkType;
+use crate::sink::SinkOptions;
 
 use std::{collections::HashMap, time::Duration};
 
@@ -12,7 +12,7 @@ pub struct Config {
 #[derive(Debug, Deserialize)]
 pub struct Feed {
     pub url: String,
-    pub sink: SinkType,
+    pub sink: SinkOptions,
     #[serde(default, with = "humantime_serde")]
     pub interval: Option<Duration>,
 }

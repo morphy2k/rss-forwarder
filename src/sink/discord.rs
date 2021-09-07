@@ -48,6 +48,10 @@ impl Sink for Discord {
 
         Ok(())
     }
+
+    async fn shutdown(self) -> Result<()> {
+        Ok(())
+    }
 }
 
 #[derive(Debug, Serialize)]

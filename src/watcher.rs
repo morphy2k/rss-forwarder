@@ -39,13 +39,13 @@ impl<'a, T: Sink> Watcher<T> {
         })
     }
 
-    pub async fn watch(&mut self, mut kill: Receiver<()>) -> Result<()> {
+    pub async fn watch(mut self, mut kill: Receiver<()>) -> Result<()> {
         let mut interval = tokio::time::interval(self.interval);
 
         loop {
             tokio::select! {
                 biased;
-                _ = kill.recv() => return Ok(()),
+                _ = kill.recv() => break,
                 _ = interval.tick() => {},
             };
 
@@ -91,6 +91,10 @@ impl<'a, T: Sink> Watcher<T> {
 
             self.last_date = last.date.into();
         }
+
+        self.sink.shutdown().await?;
+
+        Ok(())
     }
 
     fn get_new_items(&self, items: &'a [Item]) -> Option<&'a [Item]> {

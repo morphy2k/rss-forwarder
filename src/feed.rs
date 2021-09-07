@@ -4,6 +4,7 @@ use std::{convert::TryFrom, io::BufRead};
 
 use blake3::{Hash, Hasher};
 use chrono::{DateTime, FixedOffset};
+use serde::Serialize;
 
 #[derive(Debug)]
 pub enum Feed {
@@ -50,7 +51,7 @@ impl Feed {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Item {
     pub title: String,
     pub description: Option<String>,
@@ -87,6 +88,12 @@ impl TryFrom<&atom_syndication::Entry> for Item {
     type Error = FeedError;
 
     fn try_from(value: &atom_syndication::Entry) -> Result<Self, Self::Error> {
+        let authors = value
+            .authors()
+            .iter()
+            .map(Author::try_from)
+            .collect::<Result<Vec<Author>, Self::Error>>()?;
+
         let item = Self {
             title: value.title.value.to_owned(),
             description: value.summary.to_owned().map(|s| s.value),
@@ -96,18 +103,14 @@ impl TryFrom<&atom_syndication::Entry> for Item {
             },
             links: value.links().iter().map(|v| v.href.to_owned()).collect(),
             date: value.updated,
-            authors: value
-                .authors()
-                .iter()
-                .map(|v| Author::try_from(v).unwrap())
-                .collect(),
+            authors,
         };
 
         Ok(item)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Author {
     pub name: String,
     pub email: Option<String>,
