@@ -2,6 +2,10 @@
 pub enum Error {
     #[error("feed error: {0}")]
     Feed(#[from] FeedError),
+    #[error("sink error: {0}")]
+    Sink(String),
+    #[error("json error: {0}")]
+    Json(#[from] serde_json::error::Error),
     #[error("task error: {0}")]
     Task(#[from] tokio::task::JoinError),
     #[error("io error: {0}")]
