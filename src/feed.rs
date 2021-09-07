@@ -65,6 +65,12 @@ impl TryFrom<&rss::Item> for Item {
     type Error = FeedError;
 
     fn try_from(value: &rss::Item) -> Result<Self, Self::Error> {
+        let authors = if value.author.is_some() {
+            vec![Author::try_from(value)?]
+        } else {
+            Vec::default()
+        };
+
         let item = Self {
             title: value
                 .title
@@ -77,7 +83,7 @@ impl TryFrom<&rss::Item> for Item {
                 Some(v) => DateTime::parse_from_rfc2822(v).unwrap(),
                 None => return Err(FeedError::Item("rss pub date is missing".to_string())),
             },
-            authors: vec![Author::try_from(value)?],
+            authors,
         };
 
         Ok(item)
