@@ -8,7 +8,7 @@
 
 # RSS Forwarder
 
-Checks RSS feeds for new entries and forwards them to different targets (sinks), like webhooks.
+Checks RSS/Atom feeds for new entries and forwards them to different targets (called "sinks"), such as webhooks or applications/scripts.
 
 ## Supported sinks
 
