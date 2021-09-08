@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.3.0
+
+- Atom feed support added [#5](https://github.com/morphy2k/rss-forwarder/pull/5)
+- **Custom** sink added [#4](https://github.com/morphy2k/rss-forwarder/pull/4)
+- Retry on certain errors [6872ac](https://github.com/morphy2k/rss-forwarder/commit/6872ac)
+- Dependencies updated
+
 ## v0.2.0
 
 - HTML to text conversion added ([#3](https://github.com/morphy2k/rss-forwarder/pull/3))
