@@ -17,6 +17,7 @@ pub enum SinkOptions {
     },
     Custom {
         command: String,
+        #[serde(default)]
         arguments: Vec<String>,
     },
 }
