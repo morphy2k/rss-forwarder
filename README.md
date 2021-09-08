@@ -12,10 +12,10 @@ Checks RSS/Atom feeds for new entries and forwards them to different targets (ca
 
 ## Supported sinks
 
-| Sink        | Type value     |
-| ------------| :-------: |
-| [Discord](#discord-sink) | `discord` |
-| [Custom](#custom-sink) | `custom` |
+| Sink        | Type value | Description |
+| ------------| :-------: | ----------- |
+| [Discord](#discord-sink) | `discord` | Discord webhook |
+| [Custom](#custom-sink) | `custom` | JSON stream to stdin |
 
 *More is planned*
 
