@@ -5,7 +5,6 @@ use super::Sink;
 use std::process::Stdio;
 
 use async_trait::async_trait;
-
 use tokio::{
     io::AsyncWriteExt,
     process::{Child, Command},
@@ -71,7 +70,7 @@ impl Custom {
 impl Sink for Custom {
     async fn push(&self, items: &[Item]) -> Result<()> {
         for item in items {
-            let mut obj = serde_json::to_vec(&item)?;
+            let mut obj = serde_json::to_vec(item)?;
             obj.extend_from_slice(b"\n");
 
             if self.data_tx.send(obj).await.is_err() {
