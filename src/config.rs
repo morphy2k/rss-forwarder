@@ -15,4 +15,10 @@ pub struct Feed {
     pub sink: SinkOptions,
     #[serde(default, with = "humantime_serde")]
     pub interval: Option<Duration>,
+    #[serde(default = "retry_limit_default")]
+    pub retry_limit: usize,
+}
+
+const fn retry_limit_default() -> usize {
+    10
 }

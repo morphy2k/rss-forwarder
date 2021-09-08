@@ -148,7 +148,13 @@ fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<Vec<Task<
 
     for (name, config) in feeds.into_iter() {
         let sink = config.sink.sink(&client)?;
-        let watcher = Watcher::new(config.url, sink, config.interval, client.clone())?;
+        let watcher = Watcher::new(
+            config.url,
+            sink,
+            config.interval,
+            client.clone(),
+            config.retry_limit,
+        )?;
 
         let rx = tx.subscribe();
 

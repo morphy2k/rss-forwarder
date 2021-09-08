@@ -20,6 +20,8 @@ pub struct Watcher<T: Sink> {
     sink: T,
     interval: Duration,
     client: Client,
+    retry_limit: usize,
+    retries_left: usize,
     last_date: Option<DateTime<FixedOffset>>,
 }
 
@@ -29,12 +31,15 @@ impl<'a, T: Sink> Watcher<T> {
         sink: T,
         interval: Option<Duration>,
         client: Client,
+        retry_limit: usize,
     ) -> Result<Self> {
         Ok(Self {
             url: url.into_url()?,
             sink,
             interval: interval.unwrap_or(DEFAULT_INTERVAL),
             client,
+            retry_limit,
+            retries_left: retry_limit,
             last_date: None,
         })
     }
@@ -52,8 +57,9 @@ impl<'a, T: Sink> Watcher<T> {
             let feed = match self.fetch().await {
                 Ok(c) => c,
                 Err(e) => {
-                    if is_timeout(&e) {
-                        error!("Timeout while getting items: {}", e);
+                    if is_retriable(&e) && self.retries_left > 0 {
+                        error!("error while getting items: {}", e);
+                        self.retries_left -= 1;
                         continue;
                     } else {
                         return Err(e);
@@ -78,11 +84,16 @@ impl<'a, T: Sink> Watcher<T> {
                 None => continue,
             };
 
-            debug!("pushing {} items from \"{}\"", news.len(), feed.title());
+            debug!(
+                "pushing {} items from \"{}\" feed",
+                news.len(),
+                feed.title()
+            );
 
             if let Err(err) = self.sink.push(news).await {
-                if is_timeout(&err) {
-                    error!("Timeout while pushing items: {}", err);
+                if is_retriable(&err) && self.retries_left > 0 {
+                    error!("error while pushing items: {}", err);
+                    self.retries_left -= 1;
                     continue;
                 } else {
                     return Err(err);
@@ -90,6 +101,10 @@ impl<'a, T: Sink> Watcher<T> {
             }
 
             self.last_date = last.date.into();
+
+            if self.retries_left != self.retry_limit {
+                self.retries_left = self.retry_limit;
+            }
         }
 
         self.sink.shutdown().await?;
@@ -124,9 +139,9 @@ impl<'a, T: Sink> Watcher<T> {
     }
 }
 
-fn is_timeout(err: &Error) -> bool {
+fn is_retriable(err: &Error) -> bool {
     match err {
-        Error::Request(e) => e.is_timeout(),
+        Error::Request(e) => e.is_timeout() || e.is_connect() || e.is_status(),
         _ => false,
     }
 }
