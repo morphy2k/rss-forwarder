@@ -1,8 +1,8 @@
 use crate::error::FeedError;
 
-use std::{convert::TryFrom, io::BufRead};
+use std::{cmp::Reverse, io::BufRead};
 
-use blake3::{Hash, Hasher};
+use atom_syndication::TextType;
 use chrono::{DateTime, FixedOffset};
 use serde::Serialize;
 
@@ -12,7 +12,7 @@ pub enum Feed {
     Atom(atom_syndication::Feed),
 }
 
-impl Feed {
+impl<'a> Feed {
     pub fn read_from<R>(reader: R) -> Result<Self, FeedError>
     where
         R: BufRead + Copy,
@@ -38,132 +38,50 @@ impl Feed {
         }
     }
 
-    pub fn items(&self) -> Result<Vec<Item>, FeedError> {
-        let result: Result<Vec<Item>, FeedError> = match self {
-            Feed::Rss(c) => c.items().iter().map(Item::try_from).collect(),
-            Feed::Atom(f) => f.entries().iter().map(Item::try_from).collect(),
+    pub fn items(&'a self) -> Vec<&'a dyn Item> {
+        let mut items: Vec<&'a dyn Item> = match self {
+            Feed::Rss(c) => c.items().iter().map(|v| v as &dyn Item).collect(),
+            Feed::Atom(f) => f.entries().iter().map(|v| v as &dyn Item).collect(),
         };
 
-        let mut items = result?;
-        items.sort_unstable_by(|a, b| b.date.cmp(&a.date));
+        items.sort_unstable_by_key(|v| Reverse(v.date()));
 
-        Ok(items)
+        items
     }
 }
 
-#[derive(Debug, Serialize)]
-pub struct Item {
-    pub title: String,
-    pub description: Option<String>,
-    pub content: Option<String>,
-    pub links: Vec<String>,
-    pub date: DateTime<FixedOffset>,
-    pub authors: Vec<Author>,
-}
+pub trait Item: Sync {
+    fn title(&self) -> Option<&str>;
 
-impl TryFrom<&rss::Item> for Item {
-    type Error = FeedError;
+    fn title_as_text(&self) -> Option<String>;
 
-    fn try_from(value: &rss::Item) -> Result<Self, Self::Error> {
-        let authors = if value.author.is_some() {
-            vec![Author::try_from(value)?]
-        } else {
-            Vec::default()
-        };
-
-        let item = Self {
-            title: value
-                .title
-                .to_owned()
-                .ok_or_else(|| FeedError::Item("title is missing".to_string()))?,
-            description: value.description.to_owned(),
-            content: value.content.to_owned(),
-            links: value.link.to_owned().map(|s| vec![s]).unwrap_or_default(),
-            date: match value.pub_date() {
-                Some(v) => DateTime::parse_from_rfc2822(v).unwrap(),
-                None => return Err(FeedError::Item("rss pub date is missing".to_string())),
-            },
-            authors,
-        };
-
-        Ok(item)
-    }
-}
-
-impl TryFrom<&atom_syndication::Entry> for Item {
-    type Error = FeedError;
-
-    fn try_from(value: &atom_syndication::Entry) -> Result<Self, Self::Error> {
-        let authors = value
-            .authors()
-            .iter()
-            .map(Author::try_from)
-            .collect::<Result<Vec<Author>, Self::Error>>()?;
-
-        let item = Self {
-            title: value.title.value.to_owned(),
-            description: value.summary.to_owned().map(|s| s.value),
-            content: match value.content.to_owned() {
-                Some(s) => s.value,
-                None => None,
-            },
-            links: value.links().iter().map(|v| v.href.to_owned()).collect(),
-            date: value.updated,
-            authors,
-        };
-
-        Ok(item)
-    }
-}
-
-#[derive(Debug, Serialize)]
-pub struct Author {
-    pub name: String,
-    pub email: Option<String>,
-    pub uri: Option<String>,
-}
-
-impl TryFrom<&rss::Item> for Author {
-    type Error = FeedError;
-
-    fn try_from(value: &rss::Item) -> Result<Self, Self::Error> {
-        let author = Self {
-            name: value.author.to_owned().unwrap_or_default(),
-            email: value.author.to_owned(),
-            uri: None,
-        };
-
-        Ok(author)
-    }
-}
-
-impl TryFrom<&atom_syndication::Person> for Author {
-    type Error = FeedError;
-
-    fn try_from(value: &atom_syndication::Person) -> Result<Self, Self::Error> {
-        let author = Self {
-            name: value.name.to_owned(),
-            email: value.email.to_owned(),
-            uri: value.uri.to_owned(),
-        };
-
-        Ok(author)
-    }
-}
-
-pub trait ExtItem {
-    fn title_as_text(&self) -> String;
+    fn description(&self) -> Option<&str>;
 
     fn description_as_text(&self) -> Option<String>;
 
+    fn content(&self) -> Option<&str>;
+
     fn content_as_text(&self) -> Option<String>;
 
-    fn compute_hash(&self) -> Hash;
+    fn link(&self) -> Option<&str>;
+
+    fn date(&self) -> DateTime<FixedOffset>;
+
+    fn authors(&self) -> Vec<Author>;
 }
 
-impl ExtItem for Item {
-    fn title_as_text(&self) -> String {
-        html2text::from_read(self.title.as_bytes(), usize::MAX)
+impl Item for rss::Item {
+    fn title(&self) -> Option<&str> {
+        self.title()
+    }
+
+    fn title_as_text(&self) -> Option<String> {
+        self.title()
+            .map(|s| html2text::from_read(s.as_bytes(), usize::MAX))
+    }
+
+    fn description(&self) -> Option<&str> {
+        self.description()
     }
 
     fn description_as_text(&self) -> Option<String> {
@@ -172,20 +90,115 @@ impl ExtItem for Item {
             .map(|s| html2text::from_read(s.as_bytes(), usize::MAX))
     }
 
+    fn content(&self) -> Option<&str> {
+        self.content()
+    }
+
     fn content_as_text(&self) -> Option<String> {
         self.content
             .as_ref()
             .map(|s| html2text::from_read(s.as_bytes(), usize::MAX))
     }
 
-    fn compute_hash(&self) -> Hash {
-        let mut hasher = Hasher::new();
-
-        hasher.update(self.title.as_ref());
-        if let Some(v) = self.links.first() {
-            hasher.update(v.as_ref());
-        }
-
-        hasher.finalize()
+    fn link(&self) -> Option<&str> {
+        self.link()
     }
+
+    fn date(&self) -> DateTime<FixedOffset> {
+        DateTime::parse_from_rfc2822(self.pub_date().expect("missing pub date")).unwrap()
+    }
+
+    fn authors(&self) -> Vec<Author> {
+        match self.author() {
+            Some(v) => vec![Author {
+                name: v,
+                email: None,
+                uri: None,
+            }],
+            None => Vec::default(),
+        }
+    }
+}
+
+impl Item for atom_syndication::Entry {
+    fn title(&self) -> Option<&str> {
+        Some(self.title())
+    }
+
+    fn title_as_text(&self) -> Option<String> {
+        if self.title().r#type == TextType::Html {
+            html2text::from_read(self.title().value.as_bytes(), usize::MAX).into()
+        } else {
+            Some(self.title().value.to_owned())
+        }
+    }
+
+    fn description(&self) -> Option<&str> {
+        match self.summary() {
+            Some(v) => Some(&v.value),
+            None => None,
+        }
+    }
+
+    fn description_as_text(&self) -> Option<String> {
+        if let Some(v) = self.summary() {
+            if v.r#type == TextType::Html {
+                html2text::from_read(v.value.as_bytes(), usize::MAX).into()
+            } else {
+                Some(v.value.to_owned())
+            }
+        } else {
+            None
+        }
+    }
+
+    fn content(&self) -> Option<&str> {
+        match self.content() {
+            Some(v) => v.value.as_deref(),
+            None => None,
+        }
+    }
+
+    fn content_as_text(&self) -> Option<String> {
+        if let Some(v) = self.content() {
+            if v.content_type() == Some("html") {
+                v.value
+                    .as_ref()
+                    .map(|v| html2text::from_read(v.as_bytes(), usize::MAX))
+            } else {
+                v.value.to_owned()
+            }
+        } else {
+            None
+        }
+    }
+
+    fn link(&self) -> Option<&str> {
+        self.links()
+            .iter()
+            .find(|s| s.rel() == "alternate")
+            .map(|s| s.href())
+    }
+
+    fn date(&self) -> DateTime<FixedOffset> {
+        self.updated
+    }
+
+    fn authors(&self) -> Vec<Author> {
+        self.authors()
+            .iter()
+            .map(|v| Author {
+                name: v.name(),
+                email: v.email(),
+                uri: v.uri(),
+            })
+            .collect()
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct Author<'a> {
+    pub name: &'a str,
+    pub email: Option<&'a str>,
+    pub uri: Option<&'a str>,
 }

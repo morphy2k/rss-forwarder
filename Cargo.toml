@@ -37,7 +37,6 @@ thiserror = "1"
 humantime-serde = "1"
 toml = "0.5"
 pico-args = "0.4"
-blake3 = "1"
 html2text = "0.2"
 
 [profile.release]

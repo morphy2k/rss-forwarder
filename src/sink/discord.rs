@@ -1,5 +1,8 @@
+use std::convert::TryFrom;
+
 use crate::{
-    feed::{ExtItem, Item},
+    error::{Error, FeedError},
+    feed::Item,
     Result,
 };
 
@@ -27,7 +30,7 @@ impl Discord {
 
 #[async_trait]
 impl Sink for Discord {
-    async fn push(&self, items: &[Item]) -> Result<()> {
+    async fn push<'a>(&self, items: &[&'a dyn Item]) -> Result<()> {
         let length = items.len();
         let limit = 10_usize;
         let chunk_count = (length as f64 / limit as f64).ceil() as usize;
@@ -36,8 +39,8 @@ impl Sink for Discord {
         for i in 0..chunk_count {
             let pos = i * limit;
             let mut chunk = Vec::new();
-            for v in &items[pos..(pos + limit).min(length)] {
-                chunk.push(EmbedObject::from(v));
+            for &v in &items[pos..(pos + limit).min(length)] {
+                chunk.push(EmbedObject::try_from(v)?);
             }
             chunks.push(Body { embeds: chunk })
         }
@@ -56,75 +59,73 @@ impl Sink for Discord {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct Body {
-    embeds: Vec<EmbedObject>,
+struct Body<'a> {
+    embeds: Vec<EmbedObject<'a>>,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct EmbedObject {
+struct EmbedObject<'a> {
     title: String,
     description: String,
-    url: String,
+    url: &'a str,
     timestamp: DateTime<FixedOffset>,
-    author: EmbedAuthor,
-    footer: EmbedFooter,
+    author: EmbedAuthor<'a>,
+    footer: EmbedFooter<'a>,
 }
 
-impl From<&Item> for EmbedObject {
-    fn from(item: &Item) -> Self {
-        Self {
-            title: item.title_as_text(),
-            description: item.description_as_text().unwrap_or_default(),
-            url: item
-                .links
-                .first()
-                .map(|s| s.to_string())
-                .unwrap_or_default(),
-            timestamp: item.date,
-            author: EmbedAuthor::from(item),
-            footer: EmbedFooter::from(item),
-        }
+impl<'a> TryFrom<&'a dyn Item> for EmbedObject<'a> {
+    type Error = Error;
+
+    fn try_from(value: &'a dyn Item) -> std::result::Result<Self, Self::Error> {
+        let embed = Self {
+            title: value
+                .title_as_text()
+                .ok_or_else(|| FeedError::Item("title is missing".to_string()))?,
+            description: value.description_as_text().unwrap_or_default(),
+            url: value.link().unwrap_or_default(),
+            timestamp: value.date(),
+            author: EmbedAuthor::from(value),
+            footer: EmbedFooter::from(value),
+        };
+
+        Ok(embed)
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct EmbedAuthor {
-    name: String,
-    url: Option<String>,
+struct EmbedAuthor<'a> {
+    name: &'a str,
+    url: Option<&'a str>,
 }
 
-impl From<&Item> for EmbedAuthor {
-    fn from(item: &Item) -> Self {
-        let author = item.authors.first();
-
-        Self {
-            name: author.map(|v| v.name.to_owned()).unwrap_or_default(),
-            url: match author {
-                Some(v) => v.uri.to_owned(),
-                None => None,
+impl<'a> From<&'a dyn Item> for EmbedAuthor<'a> {
+    fn from(item: &'a dyn Item) -> Self {
+        match item.authors().first() {
+            Some(v) => Self {
+                name: v.name,
+                url: v.uri,
             },
+            None => Self::default(),
         }
     }
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct EmbedImage {
-    url: String,
+struct EmbedImage<'a> {
+    url: &'a str,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct EmbedFooter {
-    text: String,
+struct EmbedFooter<'a> {
+    text: &'a str,
 }
 
-impl From<&Item> for EmbedFooter {
-    fn from(_: &Item) -> Self {
-        Self {
-            text: "".to_string(),
-        }
+impl<'a> From<&'a dyn Item> for EmbedFooter<'a> {
+    fn from(_: &'a dyn Item) -> Self {
+        Self { text: "" }
     }
 }

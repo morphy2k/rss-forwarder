@@ -1,13 +1,13 @@
+pub mod custom;
+pub mod discord;
+
 use crate::{feed::Item, Result};
+
+use self::{custom::Custom, discord::Discord};
 
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::Deserialize;
-
-use self::{custom::Custom, discord::Discord};
-
-pub mod custom;
-pub mod discord;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "type")]
@@ -37,7 +37,7 @@ impl SinkOptions {
 
 #[async_trait]
 pub trait Sink {
-    async fn push(&self, items: &[Item]) -> Result<()>;
+    async fn push<'a>(&self, items: &[&'a dyn Item]) -> Result<()>;
 
     async fn shutdown(mut self) -> Result<()>;
 }
@@ -51,7 +51,7 @@ pub enum AnySink {
 #[async_trait]
 impl Sink for AnySink {
     #[inline]
-    async fn push(&self, items: &[Item]) -> Result<()> {
+    async fn push<'a>(&self, items: &[&'a dyn Item]) -> Result<()> {
         match self {
             AnySink::Discord(s) => s.push(items).await,
             AnySink::Custom(s) => s.push(items).await,

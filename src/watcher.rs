@@ -25,7 +25,7 @@ pub struct Watcher<T: Sink> {
     last_date: Option<DateTime<FixedOffset>>,
 }
 
-impl<'a, T: Sink> Watcher<T> {
+impl<T: Sink> Watcher<T> {
     pub fn new<U: IntoUrl>(
         url: U,
         sink: T,
@@ -67,7 +67,7 @@ impl<'a, T: Sink> Watcher<T> {
                 }
             };
 
-            let items = feed.items()?;
+            let items = feed.items();
 
             if items.is_empty() {
                 continue;
@@ -76,7 +76,7 @@ impl<'a, T: Sink> Watcher<T> {
             let last = items.first().unwrap();
 
             if self.last_date.is_none() {
-                self.last_date = last.date.into();
+                self.last_date = last.date().into();
             }
 
             let news = match self.get_new_items(&items) {
@@ -100,7 +100,7 @@ impl<'a, T: Sink> Watcher<T> {
                 }
             }
 
-            self.last_date = last.date.into();
+            self.last_date = last.date().into();
 
             if self.retries_left != self.retry_limit {
                 self.retries_left = self.retry_limit;
@@ -112,11 +112,11 @@ impl<'a, T: Sink> Watcher<T> {
         Ok(())
     }
 
-    fn get_new_items(&self, items: &'a [Item]) -> Option<&'a [Item]> {
+    fn get_new_items<'a>(&self, items: &'a [&'a dyn Item]) -> Option<&'a [&'a dyn Item]> {
         let mut idx = 0;
 
         for (i, item) in items.iter().enumerate() {
-            if item.date.gt(&self.last_date.unwrap()) {
+            if item.date().gt(&self.last_date.unwrap()) {
                 idx = i;
             } else {
                 if i == 0 {
