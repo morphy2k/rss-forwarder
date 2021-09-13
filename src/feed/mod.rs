@@ -2,7 +2,7 @@ pub mod item;
 
 use crate::error::FeedError;
 
-use self::item::{FeedItem, Item};
+use self::item::{FeedItem, Item, Source};
 
 use std::{cmp::Reverse, io::BufRead};
 
@@ -38,10 +38,40 @@ impl<'a> Feed {
         }
     }
 
+    pub fn link(&self) -> Option<&str> {
+        match self {
+            Feed::Rss(c) => Some(c.link()),
+            Feed::Atom(f) => f
+                .links()
+                .iter()
+                .find(|s| s.rel() == "alternate")
+                .map(|s| s.href()),
+        }
+    }
+
     pub fn items(&'a self) -> Vec<Item<'a>> {
+        let source: Source<'a> = Source {
+            title: self.title(),
+            url: self.link(),
+        };
+
         let mut items: Vec<Item<'a>> = match self {
-            Feed::Rss(c) => c.items().iter().map(|v| Item::Rss(v)).collect(),
-            Feed::Atom(f) => f.entries().iter().map(|v| Item::Atom(v)).collect(),
+            Feed::Rss(c) => c
+                .items()
+                .iter()
+                .map(|v| Item::Rss {
+                    source: source.clone(),
+                    item: v,
+                })
+                .collect(),
+            Feed::Atom(f) => f
+                .entries()
+                .iter()
+                .map(|v| Item::Atom {
+                    source: source.clone(),
+                    entry: v,
+                })
+                .collect(),
         };
 
         items.sort_unstable_by_key(|v| Reverse(v.date()));
