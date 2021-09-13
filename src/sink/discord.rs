@@ -44,10 +44,11 @@ impl Sink for Discord {
         let mut chunks: Vec<Body> = Vec::with_capacity(chunk_count);
         for i in 0..chunk_count {
             let pos = i * limit;
-            let mut chunk = Vec::new();
-            for v in &items[pos..(pos + limit).min(length)] {
-                chunk.push(EmbedObject::try_from_item(v)?);
-            }
+            let chunk = items[pos..(pos + limit).min(length)]
+                .iter()
+                .map(EmbedObject::try_from_item)
+                .collect::<Result<Vec<EmbedObject>>>()?;
+
             chunks.push(Body { embeds: chunk })
         }
 
