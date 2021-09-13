@@ -17,7 +17,6 @@ use log::{error, info};
 use pico_args::Arguments;
 use reqwest::Client;
 use tokio::{
-    fs,
     signal::unix::{signal, SignalKind},
     sync::broadcast,
     task::JoinHandle,
@@ -53,17 +52,10 @@ async fn main() -> Result<()> {
     }
     env_logger::init();
 
-    let file = match fs::read(args.config).await {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("Error while reading config: {}", e);
-            process::exit(1);
-        }
-    };
-    let config = match toml::from_slice::<Config>(&file[..]) {
+    let config = match Config::from_file(args.config).await {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("Error while parsing config: {}", e);
+            eprintln!("Error while reading config: {}", e);
             process::exit(1);
         }
     };

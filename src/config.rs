@@ -1,12 +1,22 @@
-use crate::sink::SinkOptions;
+use crate::{sink::SinkOptions, Result};
 
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, path::Path, time::Duration};
 
 use serde::Deserialize;
+use tokio::fs;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub feeds: HashMap<String, Feed>,
+}
+
+impl Config {
+    pub async fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let file = fs::read(path).await?;
+        let config = toml::from_slice(&file[..])?;
+
+        Ok(config)
+    }
 }
 
 #[derive(Debug, Deserialize)]
