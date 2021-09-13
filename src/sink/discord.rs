@@ -1,6 +1,6 @@
 use crate::{
     error::{Error, FeedError},
-    feed::{FeedItem, TryFromItem},
+    feed::item::{FeedItem, TryFromItem},
     Result,
 };
 

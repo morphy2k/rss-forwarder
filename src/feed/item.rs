@@ -1,54 +1,6 @@
-use crate::error::FeedError;
-
-use std::{cmp::Reverse, io::BufRead};
-
 use atom_syndication::TextType;
 use chrono::{DateTime, FixedOffset};
 use serde::Serialize;
-
-#[derive(Debug)]
-pub enum Feed {
-    Rss(rss::Channel),
-    Atom(atom_syndication::Feed),
-}
-
-impl<'a> Feed {
-    pub fn read_from<R>(reader: R) -> Result<Self, FeedError>
-    where
-        R: BufRead + Copy,
-    {
-        let feed = match rss::Channel::read_from(reader) {
-            Ok(channel) => Self::Rss(channel),
-            Err(e) => match e {
-                rss::Error::InvalidStartTag => {
-                    let feed = atom_syndication::Feed::read_from(reader)?;
-                    Self::Atom(feed)
-                }
-                _ => return Err(e.into()),
-            },
-        };
-
-        Ok(feed)
-    }
-
-    pub fn title(&self) -> &str {
-        match self {
-            Feed::Rss(c) => &c.title,
-            Feed::Atom(f) => &f.title.value,
-        }
-    }
-
-    pub fn items(&'a self) -> Vec<Item<'a>> {
-        let mut items: Vec<Item<'a>> = match self {
-            Feed::Rss(c) => c.items().iter().map(|v| Item::Rss(v)).collect(),
-            Feed::Atom(f) => f.entries().iter().map(|v| Item::Atom(v)).collect(),
-        };
-
-        items.sort_unstable_by_key(|v| Reverse(v.date()));
-
-        items
-    }
-}
 
 pub trait FeedItem<'a>: Sync {
     fn title(&'a self) -> Option<&str>;
@@ -81,43 +33,52 @@ where
 }
 
 impl<'a> FeedItem<'a> for rss::Item {
+    #[inline]
     fn title(&self) -> Option<&str> {
         self.title()
     }
 
+    #[inline]
     fn title_as_text(&self) -> Option<String> {
         self.title()
             .map(|s| html2text::from_read(s.as_bytes(), usize::MAX))
     }
 
+    #[inline]
     fn description(&self) -> Option<&str> {
         self.description()
     }
 
+    #[inline]
     fn description_as_text(&self) -> Option<String> {
         self.description
             .as_ref()
             .map(|s| html2text::from_read(s.as_bytes(), usize::MAX))
     }
 
+    #[inline]
     fn content(&self) -> Option<&str> {
         self.content()
     }
 
+    #[inline]
     fn content_as_text(&self) -> Option<String> {
         self.content
             .as_ref()
             .map(|s| html2text::from_read(s.as_bytes(), usize::MAX))
     }
 
+    #[inline]
     fn link(&self) -> Option<&str> {
         self.link()
     }
 
+    #[inline]
     fn date(&self) -> DateTime<FixedOffset> {
         DateTime::parse_from_rfc2822(self.pub_date().expect("missing pub date")).unwrap()
     }
 
+    #[inline]
     fn authors(&self) -> Vec<Author> {
         match self.author() {
             Some(v) => vec![Author {
@@ -131,10 +92,12 @@ impl<'a> FeedItem<'a> for rss::Item {
 }
 
 impl<'a> FeedItem<'a> for atom_syndication::Entry {
+    #[inline]
     fn title(&self) -> Option<&str> {
         Some(self.title())
     }
 
+    #[inline]
     fn title_as_text(&self) -> Option<String> {
         if self.title().r#type == TextType::Html {
             html2text::from_read(self.title().value.as_bytes(), usize::MAX).into()
@@ -143,6 +106,7 @@ impl<'a> FeedItem<'a> for atom_syndication::Entry {
         }
     }
 
+    #[inline]
     fn description(&self) -> Option<&str> {
         match self.summary() {
             Some(v) => Some(&v.value),
@@ -150,6 +114,7 @@ impl<'a> FeedItem<'a> for atom_syndication::Entry {
         }
     }
 
+    #[inline]
     fn description_as_text(&self) -> Option<String> {
         if let Some(v) = self.summary() {
             if v.r#type == TextType::Html {
@@ -162,6 +127,7 @@ impl<'a> FeedItem<'a> for atom_syndication::Entry {
         }
     }
 
+    #[inline]
     fn content(&self) -> Option<&str> {
         match self.content() {
             Some(v) => v.value.as_deref(),
@@ -169,6 +135,7 @@ impl<'a> FeedItem<'a> for atom_syndication::Entry {
         }
     }
 
+    #[inline]
     fn content_as_text(&self) -> Option<String> {
         if let Some(v) = self.content() {
             if v.content_type() == Some("html") {
@@ -183,6 +150,7 @@ impl<'a> FeedItem<'a> for atom_syndication::Entry {
         }
     }
 
+    #[inline]
     fn link(&self) -> Option<&str> {
         self.links()
             .iter()
@@ -194,6 +162,7 @@ impl<'a> FeedItem<'a> for atom_syndication::Entry {
         self.updated
     }
 
+    #[inline]
     fn authors(&self) -> Vec<Author> {
         self.authors()
             .iter()
@@ -219,6 +188,7 @@ pub enum Item<'a> {
 }
 
 impl<'a> FeedItem<'a> for Item<'a> {
+    #[inline]
     fn title(&self) -> Option<&str> {
         match self {
             Item::Rss(i) => <rss::Item as FeedItem>::title(i),
@@ -226,6 +196,7 @@ impl<'a> FeedItem<'a> for Item<'a> {
         }
     }
 
+    #[inline]
     fn title_as_text(&self) -> Option<String> {
         match self {
             Item::Rss(i) => <rss::Item as FeedItem>::title_as_text(i),
@@ -233,6 +204,7 @@ impl<'a> FeedItem<'a> for Item<'a> {
         }
     }
 
+    #[inline]
     fn description(&self) -> Option<&str> {
         match self {
             Item::Rss(i) => <rss::Item as FeedItem>::description(i),
@@ -240,6 +212,7 @@ impl<'a> FeedItem<'a> for Item<'a> {
         }
     }
 
+    #[inline]
     fn description_as_text(&self) -> Option<String> {
         match self {
             Item::Rss(i) => <rss::Item as FeedItem>::description_as_text(i),
@@ -247,6 +220,7 @@ impl<'a> FeedItem<'a> for Item<'a> {
         }
     }
 
+    #[inline]
     fn content(&self) -> Option<&str> {
         match self {
             Item::Rss(i) => <rss::Item as FeedItem>::content(i),
@@ -254,6 +228,7 @@ impl<'a> FeedItem<'a> for Item<'a> {
         }
     }
 
+    #[inline]
     fn content_as_text(&self) -> Option<String> {
         match self {
             Item::Rss(i) => <rss::Item as FeedItem>::content_as_text(i),
@@ -261,6 +236,7 @@ impl<'a> FeedItem<'a> for Item<'a> {
         }
     }
 
+    #[inline]
     fn link(&self) -> Option<&str> {
         match self {
             Item::Rss(i) => <rss::Item as FeedItem>::link(i),
@@ -268,6 +244,7 @@ impl<'a> FeedItem<'a> for Item<'a> {
         }
     }
 
+    #[inline]
     fn date(&self) -> DateTime<FixedOffset> {
         match self {
             Item::Rss(i) => <rss::Item as FeedItem>::date(i),
@@ -275,6 +252,7 @@ impl<'a> FeedItem<'a> for Item<'a> {
         }
     }
 
+    #[inline]
     fn authors(&self) -> Vec<Author> {
         match self {
             Item::Rss(i) => <rss::Item as FeedItem>::authors(i),

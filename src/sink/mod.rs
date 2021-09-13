@@ -1,7 +1,7 @@
 pub mod custom;
 pub mod discord;
 
-use crate::{feed::FeedItem, Result};
+use crate::{feed::item::FeedItem, Result};
 
 use self::{custom::Custom, discord::Discord};
 

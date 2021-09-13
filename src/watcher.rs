@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    feed::{Feed, FeedItem},
+    feed::{item::FeedItem, Feed},
     sink::Sink,
     Result,
 };
