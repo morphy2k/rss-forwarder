@@ -109,7 +109,7 @@ struct Object<'a> {
     content: Option<&'a str>,
     link: &'a str,
     date: DateTime<FixedOffset>,
-    author: Vec<Author<'a>>,
+    authors: Vec<Author<'a>>,
 }
 
 impl<'a, T> TryFromItem<'a, T> for Object<'a>
@@ -129,7 +129,7 @@ where
                 .link()
                 .ok_or_else(|| FeedError::Item("missing link".to_string()))?,
             date: value.date(),
-            author: value.authors(),
+            authors: value.authors(),
         };
 
         Ok(obj)
