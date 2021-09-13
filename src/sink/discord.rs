@@ -1,8 +1,6 @@
-use std::convert::TryFrom;
-
 use crate::{
     error::{Error, FeedError},
-    feed::Item,
+    feed::{FeedItem, TryFromItem},
     Result,
 };
 
@@ -30,7 +28,10 @@ impl Discord {
 
 #[async_trait]
 impl Sink for Discord {
-    async fn push<'a>(&self, items: &[&'a dyn Item]) -> Result<()> {
+    async fn push<'a, T>(&self, items: &'a [T]) -> Result<()>
+    where
+        T: FeedItem<'a>,
+    {
         let length = items.len();
         let limit = 10_usize;
         let chunk_count = (length as f64 / limit as f64).ceil() as usize;
@@ -39,8 +40,8 @@ impl Sink for Discord {
         for i in 0..chunk_count {
             let pos = i * limit;
             let mut chunk = Vec::new();
-            for &v in &items[pos..(pos + limit).min(length)] {
-                chunk.push(EmbedObject::try_from(v)?);
+            for v in &items[pos..(pos + limit).min(length)] {
+                chunk.push(EmbedObject::try_from_item(v)?);
             }
             chunks.push(Body { embeds: chunk })
         }
@@ -74,10 +75,13 @@ struct EmbedObject<'a> {
     footer: EmbedFooter<'a>,
 }
 
-impl<'a> TryFrom<&'a dyn Item> for EmbedObject<'a> {
+impl<'a, T> TryFromItem<'a, T> for EmbedObject<'a>
+where
+    T: FeedItem<'a>,
+{
     type Error = Error;
 
-    fn try_from(value: &'a dyn Item) -> std::result::Result<Self, Self::Error> {
+    fn try_from_item(value: &'a T) -> std::result::Result<Self, Self::Error> {
         let embed = Self {
             title: value
                 .title_as_text()
@@ -85,8 +89,8 @@ impl<'a> TryFrom<&'a dyn Item> for EmbedObject<'a> {
             description: value.description_as_text().unwrap_or_default(),
             url: value.link().unwrap_or_default(),
             timestamp: value.date(),
-            author: EmbedAuthor::from(value),
-            footer: EmbedFooter::from(value),
+            author: EmbedAuthor::try_from_item(value)?,
+            footer: EmbedFooter::try_from_item(value)?,
         };
 
         Ok(embed)
@@ -100,15 +104,20 @@ struct EmbedAuthor<'a> {
     url: Option<&'a str>,
 }
 
-impl<'a> From<&'a dyn Item> for EmbedAuthor<'a> {
-    fn from(item: &'a dyn Item) -> Self {
-        match item.authors().first() {
+impl<'a, T> TryFromItem<'a, T> for EmbedAuthor<'a>
+where
+    T: FeedItem<'a>,
+{
+    type Error = Error;
+
+    fn try_from_item(value: &'a T) -> std::result::Result<Self, Self::Error> {
+        Ok(match value.authors().first() {
             Some(v) => Self {
                 name: v.name,
                 url: v.uri,
             },
             None => Self::default(),
-        }
+        })
     }
 }
 
@@ -124,8 +133,13 @@ struct EmbedFooter<'a> {
     text: &'a str,
 }
 
-impl<'a> From<&'a dyn Item> for EmbedFooter<'a> {
-    fn from(_: &'a dyn Item) -> Self {
-        Self { text: "" }
+impl<'a, T> TryFromItem<'a, T> for EmbedFooter<'a>
+where
+    T: FeedItem<'a>,
+{
+    type Error = Error;
+
+    fn try_from_item(_: &'a T) -> std::result::Result<Self, Self::Error> {
+        Ok(Self { text: "" })
     }
 }

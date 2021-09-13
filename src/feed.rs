@@ -38,10 +38,10 @@ impl<'a> Feed {
         }
     }
 
-    pub fn items(&'a self) -> Vec<&'a dyn Item> {
-        let mut items: Vec<&'a dyn Item> = match self {
-            Feed::Rss(c) => c.items().iter().map(|v| v as &dyn Item).collect(),
-            Feed::Atom(f) => f.entries().iter().map(|v| v as &dyn Item).collect(),
+    pub fn items(&'a self) -> Vec<Item<'a>> {
+        let mut items: Vec<Item<'a>> = match self {
+            Feed::Rss(c) => c.items().iter().map(|v| Item::Rss(v)).collect(),
+            Feed::Atom(f) => f.entries().iter().map(|v| Item::Atom(v)).collect(),
         };
 
         items.sort_unstable_by_key(|v| Reverse(v.date()));
@@ -50,27 +50,37 @@ impl<'a> Feed {
     }
 }
 
-pub trait Item: Sync {
-    fn title(&self) -> Option<&str>;
+pub trait FeedItem<'a>: Sync {
+    fn title(&'a self) -> Option<&str>;
 
-    fn title_as_text(&self) -> Option<String>;
+    fn title_as_text(&'a self) -> Option<String>;
 
-    fn description(&self) -> Option<&str>;
+    fn description(&'a self) -> Option<&str>;
 
-    fn description_as_text(&self) -> Option<String>;
+    fn description_as_text(&'a self) -> Option<String>;
 
-    fn content(&self) -> Option<&str>;
+    fn content(&'a self) -> Option<&str>;
 
-    fn content_as_text(&self) -> Option<String>;
+    fn content_as_text(&'a self) -> Option<String>;
 
-    fn link(&self) -> Option<&str>;
+    fn link(&'a self) -> Option<&str>;
 
-    fn date(&self) -> DateTime<FixedOffset>;
+    fn date(&'a self) -> DateTime<FixedOffset>;
 
-    fn authors(&self) -> Vec<Author>;
+    fn authors(&'a self) -> Vec<Author>;
 }
 
-impl Item for rss::Item {
+pub trait TryFromItem<'a, T>
+where
+    T: FeedItem<'a>,
+    Self: Sized,
+{
+    type Error: std::error::Error;
+
+    fn try_from_item(value: &'a T) -> std::result::Result<Self, Self::Error>;
+}
+
+impl<'a> FeedItem<'a> for rss::Item {
     fn title(&self) -> Option<&str> {
         self.title()
     }
@@ -120,7 +130,7 @@ impl Item for rss::Item {
     }
 }
 
-impl Item for atom_syndication::Entry {
+impl<'a> FeedItem<'a> for atom_syndication::Entry {
     fn title(&self) -> Option<&str> {
         Some(self.title())
     }
@@ -201,4 +211,74 @@ pub struct Author<'a> {
     pub name: &'a str,
     pub email: Option<&'a str>,
     pub uri: Option<&'a str>,
+}
+
+pub enum Item<'a> {
+    Rss(&'a rss::Item),
+    Atom(&'a atom_syndication::Entry),
+}
+
+impl<'a> FeedItem<'a> for Item<'a> {
+    fn title(&self) -> Option<&str> {
+        match self {
+            Item::Rss(i) => <rss::Item as FeedItem>::title(i),
+            Item::Atom(e) => <atom_syndication::Entry as FeedItem>::title(e),
+        }
+    }
+
+    fn title_as_text(&self) -> Option<String> {
+        match self {
+            Item::Rss(i) => <rss::Item as FeedItem>::title_as_text(i),
+            Item::Atom(e) => <atom_syndication::Entry as FeedItem>::title_as_text(e),
+        }
+    }
+
+    fn description(&self) -> Option<&str> {
+        match self {
+            Item::Rss(i) => <rss::Item as FeedItem>::description(i),
+            Item::Atom(e) => <atom_syndication::Entry as FeedItem>::description(e),
+        }
+    }
+
+    fn description_as_text(&self) -> Option<String> {
+        match self {
+            Item::Rss(i) => <rss::Item as FeedItem>::description_as_text(i),
+            Item::Atom(e) => <atom_syndication::Entry as FeedItem>::description_as_text(e),
+        }
+    }
+
+    fn content(&self) -> Option<&str> {
+        match self {
+            Item::Rss(i) => <rss::Item as FeedItem>::content(i),
+            Item::Atom(e) => <atom_syndication::Entry as FeedItem>::content(e),
+        }
+    }
+
+    fn content_as_text(&self) -> Option<String> {
+        match self {
+            Item::Rss(i) => <rss::Item as FeedItem>::content_as_text(i),
+            Item::Atom(e) => <atom_syndication::Entry as FeedItem>::content_as_text(e),
+        }
+    }
+
+    fn link(&self) -> Option<&str> {
+        match self {
+            Item::Rss(i) => <rss::Item as FeedItem>::link(i),
+            Item::Atom(e) => <atom_syndication::Entry as FeedItem>::link(e),
+        }
+    }
+
+    fn date(&self) -> DateTime<FixedOffset> {
+        match self {
+            Item::Rss(i) => <rss::Item as FeedItem>::date(i),
+            Item::Atom(e) => <atom_syndication::Entry as FeedItem>::date(e),
+        }
+    }
+
+    fn authors(&self) -> Vec<Author> {
+        match self {
+            Item::Rss(i) => <rss::Item as FeedItem>::authors(i),
+            Item::Atom(e) => <atom_syndication::Entry as FeedItem>::authors(e),
+        }
+    }
 }

@@ -1,12 +1,12 @@
 use crate::{
     error::{Error, FeedError},
-    feed::{Author, Item},
+    feed::{Author, FeedItem, TryFromItem},
     Result,
 };
 
 use super::Sink;
 
-use std::{convert::TryFrom, process::Stdio};
+use std::process::Stdio;
 
 use async_trait::async_trait;
 use chrono::{DateTime, FixedOffset};
@@ -74,10 +74,13 @@ impl Custom {
 
 #[async_trait]
 impl Sink for Custom {
-    async fn push<'a>(&self, items: &[&'a dyn Item]) -> Result<()> {
-        for &item in items {
-            let item = Object::try_from(item)?;
-            let mut json = serde_json::to_vec(&item)?;
+    async fn push<'a, T>(&self, items: &'a [T]) -> Result<()>
+    where
+        T: FeedItem<'a>,
+    {
+        for item in items {
+            let obj = Object::try_from_item(item)?;
+            let mut json = serde_json::to_vec(&obj)?;
             json.extend_from_slice(b"\n");
 
             if self.data_tx.send(json).await.is_err() {
@@ -109,10 +112,13 @@ struct Object<'a> {
     author: Vec<Author<'a>>,
 }
 
-impl<'a> TryFrom<&'a dyn Item> for Object<'a> {
+impl<'a, T> TryFromItem<'a, T> for Object<'a>
+where
+    T: FeedItem<'a>,
+{
     type Error = Error;
 
-    fn try_from(value: &'a dyn Item) -> std::result::Result<Self, Self::Error> {
+    fn try_from_item(value: &'a T) -> std::result::Result<Self, Self::Error> {
         let obj = Self {
             title: value
                 .title()

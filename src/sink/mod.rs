@@ -1,7 +1,7 @@
 pub mod custom;
 pub mod discord;
 
-use crate::{feed::Item, Result};
+use crate::{feed::FeedItem, Result};
 
 use self::{custom::Custom, discord::Discord};
 
@@ -37,7 +37,9 @@ impl SinkOptions {
 
 #[async_trait]
 pub trait Sink {
-    async fn push<'a>(&self, items: &[&'a dyn Item]) -> Result<()>;
+    async fn push<'a, T>(&self, items: &'a [T]) -> Result<()>
+    where
+        T: FeedItem<'a>;
 
     async fn shutdown(mut self) -> Result<()>;
 }
@@ -51,7 +53,10 @@ pub enum AnySink {
 #[async_trait]
 impl Sink for AnySink {
     #[inline]
-    async fn push<'a>(&self, items: &[&'a dyn Item]) -> Result<()> {
+    async fn push<'a, T>(&self, items: &'a [T]) -> Result<()>
+    where
+        T: FeedItem<'a>,
+    {
         match self {
             AnySink::Discord(s) => s.push(items).await,
             AnySink::Custom(s) => s.push(items).await,

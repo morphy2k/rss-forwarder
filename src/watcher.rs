@@ -1,6 +1,6 @@
 use crate::{
     error::Error,
-    feed::{Feed, Item},
+    feed::{Feed, FeedItem},
     sink::Sink,
     Result,
 };
@@ -112,7 +112,10 @@ impl<T: Sink> Watcher<T> {
         Ok(())
     }
 
-    fn get_new_items<'a>(&self, items: &'a [&'a dyn Item]) -> Option<&'a [&'a dyn Item]> {
+    fn get_new_items<'a, I>(&self, items: &'a [I]) -> Option<&'a [I]>
+    where
+        I: FeedItem<'a>,
+    {
         let mut idx = 0;
 
         for (i, item) in items.iter().enumerate() {
