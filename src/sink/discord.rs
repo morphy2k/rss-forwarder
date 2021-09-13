@@ -11,6 +11,11 @@ use chrono::{DateTime, FixedOffset};
 use reqwest::{Client, IntoUrl, Url};
 use serde::Serialize;
 
+const PROVIDER: EmbedProvider<'static> = EmbedProvider {
+    name: env!("CARGO_PKG_NAME"),
+    url: Some(env!("CARGO_PKG_REPOSITORY")),
+};
+
 #[derive(Debug)]
 pub struct Discord {
     url: Url,
@@ -73,6 +78,7 @@ struct EmbedObject<'a> {
     timestamp: DateTime<FixedOffset>,
     author: EmbedAuthor<'a>,
     footer: EmbedFooter<'a>,
+    provider: EmbedProvider<'a>,
 }
 
 impl<'a, T> TryFromItem<'a, T> for EmbedObject<'a>
@@ -91,6 +97,7 @@ where
             timestamp: value.date(),
             author: EmbedAuthor::try_from_item(value)?,
             footer: EmbedFooter::try_from_item(value)?,
+            provider: PROVIDER,
         };
 
         Ok(embed)
@@ -139,7 +146,19 @@ where
 {
     type Error = Error;
 
-    fn try_from_item(_: &'a T) -> std::result::Result<Self, Self::Error> {
-        Ok(Self { text: "" })
+    fn try_from_item(value: &'a T) -> std::result::Result<Self, Self::Error> {
+        Ok(Self {
+            text: match value.source() {
+                Some(v) => v.title,
+                None => "",
+            },
+        })
     }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct EmbedProvider<'a> {
+    name: &'a str,
+    url: Option<&'a str>,
 }
