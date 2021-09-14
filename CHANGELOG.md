@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+- Feed module improved and refactored [3c5ccd6...90730a6](https://github.com/morphy2k/rss-forwarder/compare/3c5ccd6...90730a6)
+- Feed level metadata to item added [2f8d31f](https://github.com/morphy2k/rss-forwarder/commit/2f8d31f)
+- Metadata to Discord object added [b8b23ce](https://github.com/morphy2k/rss-forwarder/commit/b8b23ce)
+- Rust version changed to **v1.55** [3c5ccd6](https://github.com/morphy2k/rss-forwarder/commit/3c5ccd6)
+- Small improvements to the code
+- Dependencies updated
+
+### BREAKING
+
+The JSON output of the sink **Custom** changes as follows.
+
+```DIFF
+{
+    ...
+-    "links": ["https://example.com/news/item-example"],
++    "link": "https://example.com/news/item-example",
+    ...
+}
+```
+
 ## v0.3.0
 
 - Atom feed support added [#5](https://github.com/morphy2k/rss-forwarder/pull/5)
