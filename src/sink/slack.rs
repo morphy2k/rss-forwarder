@@ -108,7 +108,6 @@ where
                 emoji: false,
             })
             .into(),
-            fields: Vec::default(),
             accessory: Element::Button(Button {
                 text: Text::PlainText(PlainText {
                     text: ":link: Open".to_string(),
@@ -122,24 +121,41 @@ where
             ..Default::default()
         };
 
-        let date = value.date().format("%d %b %Y %I:%M %p %Z");
+        let mut ctx_elements = Vec::with_capacity(3);
 
-        let footer = if let Some(s) = value.source() {
+        if let Some(a) = value.authors().first() {
+            let author = if let Some(url) = a.uri {
+                format!("<{}|{}>", url, a.name)
+            } else {
+                a.name.to_string()
+            };
+
+            ctx_elements.push(ContextElement::Text(Text::Markdown(MarkdownText {
+                text: author,
+                verbatim: false,
+            })));
+        }
+
+        if let Some(s) = value.source() {
             let src = if let Some(url) = s.url {
                 format!("<{}|{}>", url, s.title)
             } else {
                 s.title.to_string()
             };
-            format!("{} | _{}_", src, date)
-        } else {
-            date.to_string()
-        };
+
+            ctx_elements.push(ContextElement::Text(Text::Markdown(MarkdownText {
+                text: src,
+                verbatim: false,
+            })));
+        }
+
+        ctx_elements.push(ContextElement::Text(Text::PlainText(PlainText {
+            text: value.date().format("%d %b %Y %I:%M %p %Z").to_string(),
+            emoji: false,
+        })));
 
         let context = Context {
-            elements: vec![ContextElement::Text(Text::Markdown(MarkdownText {
-                text: footer,
-                verbatim: false,
-            }))],
+            elements: ctx_elements,
             ..Default::default()
         };
 
