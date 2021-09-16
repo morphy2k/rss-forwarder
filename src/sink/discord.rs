@@ -49,11 +49,16 @@ impl Sink for Discord {
                 .map(EmbedObject::try_from_item)
                 .collect::<Result<Vec<EmbedObject>>>()?;
 
-            chunks.push(Body { embeds: chunk })
+            chunks.push(Body { embeds: chunk });
         }
 
         for v in chunks.iter() {
-            self.client.post(self.url.as_ref()).json(v).send().await?;
+            self.client
+                .post(self.url.as_ref())
+                .json(v)
+                .send()
+                .await?
+                .error_for_status()?;
         }
 
         Ok(())
