@@ -6,13 +6,14 @@
 - Feed module improved and refactored [3c5ccd6...90730a6](https://github.com/morphy2k/rss-forwarder/compare/3c5ccd6...90730a6)
 - Feed level metadata to item added [2f8d31f](https://github.com/morphy2k/rss-forwarder/commit/2f8d31f)
 - Metadata to Discord object added [b8b23ce](https://github.com/morphy2k/rss-forwarder/commit/b8b23ce)
+- Discord sink returns an error on bad status [b5a6737](https://github.com/morphy2k/rss-forwarder/commit/b5a6737)
 - Rust version changed to **v1.55** [3c5ccd6](https://github.com/morphy2k/rss-forwarder/commit/3c5ccd6)
 - Small improvements to the code
 - Dependencies updated
 
 ### BREAKING
 
-The JSON output of the sink **Custom** changes as follows.
+The JSON output of the sink **Custom** now contains only the link to reference.
 
 ```DIFF
 {
