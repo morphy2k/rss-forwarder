@@ -56,7 +56,13 @@ impl Sink for Slack {
         }
 
         for (i, v) in chunks.iter().enumerate() {
-            self.client.post(self.url.as_ref()).json(v).send().await?;
+            self.client
+                .post(self.url.as_ref())
+                .json(v)
+                .send()
+                .await?
+                .error_for_status()?;
+
             if i != chunks.len() - 1 {
                 time::sleep(Duration::from_millis(1000)).await;
             }
@@ -110,12 +116,10 @@ where
                 }),
                 action_id: "button-action".to_string(),
                 url: value.link().map(|s| s.to_string()),
-                value: None,
-                style: None,
-                confirm: None,
+                ..Default::default()
             })
             .into(),
-            block_id: None,
+            ..Default::default()
         };
 
         let date = value.date().format("%d %b %Y %I:%M %p %Z");
@@ -136,14 +140,14 @@ where
                 text: footer,
                 verbatim: false,
             }))],
-            block_id: None,
+            ..Default::default()
         };
 
         let collection = vec![
             Block::Header(header),
             Block::Section(section),
             Block::Context(context),
-            Block::Divider(Divider { block_id: None }),
+            Block::Divider(Divider::default()),
         ];
 
         Ok(collection)
