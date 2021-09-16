@@ -18,7 +18,6 @@ Checks RSS/Atom feeds for new entries and forwards them to different targets (ca
 | [Slack](#slack-sink) | `slack` | Slack webhook |
 | [Custom](#custom-sink) | `custom` | JSON stream to stdin |
 
-
 ## Installation
 
 ### Official binary
@@ -102,7 +101,7 @@ Streams feed items in [NDJSON](https://en.wikipedia.org/wiki/JSON_streaming#Line
     "title": "Item Example",
     "description": "This is an example",
     "content": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.",
-    "links": ["https://example.com/news/item-example"],
+    "link": "https://example.com/news/item-example",
     "date": "2021-09-08T23:12:05+02:00",
     "authors": [
         {
