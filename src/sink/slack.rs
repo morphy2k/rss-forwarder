@@ -104,7 +104,7 @@ where
             text: Text::PlainText(PlainText {
                 text: value
                     .description_as_text()
-                    .unwrap_or_else(|| "No description...".to_string()),
+                    .unwrap_or_else(|| "...".to_string()),
                 emoji: false,
             })
             .into(),
