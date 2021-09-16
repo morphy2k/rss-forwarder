@@ -46,8 +46,8 @@ impl Sink for Slack {
             let pos = i * limit;
             let chunk = items[pos..(pos + limit).min(length)]
                 .iter()
-                .map(BlockCollection::try_from_item)
-                .collect::<Result<Vec<BlockCollection>>>()?
+                .map(ItemBlockCollection::try_from_item)
+                .collect::<Result<Vec<ItemBlockCollection>>>()?
                 .into_iter()
                 .flatten()
                 .collect();
@@ -81,9 +81,9 @@ struct Body {
     blocks: Vec<Block>,
 }
 
-type BlockCollection = Vec<Block>;
+type ItemBlockCollection = [Block; 4];
 
-impl<'a, T> TryFromItem<'a, T> for BlockCollection
+impl<'a, T> TryFromItem<'a, T> for ItemBlockCollection
 where
     T: FeedItem<'a>,
 {
@@ -143,13 +143,11 @@ where
             ..Default::default()
         };
 
-        let collection = vec![
+        Ok([
             Block::Header(header),
             Block::Section(section),
             Block::Context(context),
             Block::Divider(Divider::default()),
-        ];
-
-        Ok(collection)
+        ])
     }
 }
