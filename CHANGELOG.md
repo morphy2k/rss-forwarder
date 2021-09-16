@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Slack webhook sink added [#6](https://github.com/morphy2k/rss-forwarder/pull/6)
 - Feed module improved and refactored [3c5ccd6...90730a6](https://github.com/morphy2k/rss-forwarder/compare/3c5ccd6...90730a6)
 - Feed level metadata to item added [2f8d31f](https://github.com/morphy2k/rss-forwarder/commit/2f8d31f)
 - Metadata to Discord object added [b8b23ce](https://github.com/morphy2k/rss-forwarder/commit/b8b23ce)

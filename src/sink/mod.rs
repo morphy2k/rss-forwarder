@@ -1,9 +1,10 @@
 pub mod custom;
 pub mod discord;
+pub mod slack;
 
 use crate::{feed::item::FeedItem, Result};
 
-use self::{custom::Custom, discord::Discord};
+use self::{custom::Custom, discord::Discord, slack::Slack};
 
 use async_trait::async_trait;
 use reqwest::Client;
@@ -13,6 +14,9 @@ use serde::Deserialize;
 #[serde(rename_all = "snake_case", tag = "type")]
 pub enum SinkOptions {
     Discord {
+        url: String,
+    },
+    Slack {
         url: String,
     },
     Custom {
@@ -26,6 +30,7 @@ impl SinkOptions {
     pub fn sink(self, client: &Client) -> Result<AnySink> {
         let sink = match self {
             SinkOptions::Discord { url } => AnySink::Discord(Discord::new(url, client.clone())?),
+            SinkOptions::Slack { url } => AnySink::Slack(Slack::new(url, client.clone())?),
             SinkOptions::Custom { command, arguments } => {
                 AnySink::Custom(Custom::new(command, arguments)?)
             }
@@ -47,6 +52,7 @@ pub trait Sink {
 #[derive(Debug)]
 pub enum AnySink {
     Discord(discord::Discord),
+    Slack(slack::Slack),
     Custom(custom::Custom),
 }
 
@@ -59,6 +65,7 @@ impl Sink for AnySink {
     {
         match self {
             AnySink::Discord(s) => s.push(items).await,
+            AnySink::Slack(s) => s.push(items).await,
             AnySink::Custom(s) => s.push(items).await,
         }
     }
@@ -67,6 +74,7 @@ impl Sink for AnySink {
     async fn shutdown(self) -> Result<()> {
         match self {
             AnySink::Discord(s) => s.shutdown().await,
+            AnySink::Slack(s) => s.shutdown().await,
             AnySink::Custom(s) => s.shutdown().await,
         }
     }

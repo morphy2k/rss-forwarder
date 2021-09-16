@@ -15,9 +15,9 @@ Checks RSS/Atom feeds for new entries and forwards them to different targets (ca
 | Sink        | Type value | Description |
 | ------------| :-------: | ----------- |
 | [Discord](#discord-sink) | `discord` | Discord webhook |
+| [Slack](#slack-sink) | `slack` | Slack webhook |
 | [Custom](#custom-sink) | `custom` | JSON stream to stdin |
 
-*More is planned*
 
 ## Installation
 
@@ -75,6 +75,15 @@ Sends feed items to a [Discord webhook](https://support.discord.com/hc/en-us/art
 | -------------|:----:|:--------:|:--------:| ----------- |
 | `type` | string | Yes | | Sink type |
 | `url` | string | Yes | | Discord webhook URL |
+
+### Slack Sink
+
+Sends feed items to a [Slack webhook](https://api.slack.com/messaging/webhooks)
+
+| Field        | Type | Required | Default | Description  |
+| -------------|:----:|:--------:|:--------:| ----------- |
+| `type` | string | Yes | | Sink type |
+| `url` | string | Yes | | Slack webhook URL |
 
 ### Custom Sink
 
