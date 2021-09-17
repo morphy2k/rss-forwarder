@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.4.0
 
 - Slack webhook sink added [#6](https://github.com/morphy2k/rss-forwarder/pull/6)
 - Feed module improved and refactored [3c5ccd6...90730a6](https://github.com/morphy2k/rss-forwarder/compare/3c5ccd6...90730a6)
