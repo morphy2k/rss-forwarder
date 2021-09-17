@@ -9,6 +9,7 @@ categories = ["command-line-utilities"]
 repository = "https://github.com/morphy2k/rss-forwarder"
 readme = "README.md"
 license = "MIT"
+exclude = ["/example", "/.github"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
