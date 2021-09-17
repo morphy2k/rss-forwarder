@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.1
+
+- Remove keyword to match rules (fix crates.io publishing) [7edbb9e](https://github.com/morphy2k/rss-forwarder/commit/7edbb9e)
+
 ## v0.4.0
 
 - Slack webhook sink added [#6](https://github.com/morphy2k/rss-forwarder/pull/6)
