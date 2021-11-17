@@ -2,7 +2,7 @@
 
 ## v0.5.1
 
-- Rust image updated (fixes container image building) [b3099b8](<(https://github.com/morphy2k/rss-forwarder/commit/b3099b8)>)
+- Rust image updated (fixes container image building) [b3099b8](https://github.com/morphy2k/rss-forwarder/commit/b3099b8)
 
 ## v0.5.0
 
