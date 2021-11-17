@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.0
+
+- Migration to Rust 2021 edition (MSRV 1.56)
+- Mitigations for [RUSTSEC-2020-0071](https://rustsec.org/advisories/RUSTSEC-2020-0071)
+- Dependencies updated
+
 ## v0.4.1
 
 - Keyword removed to match rules (fixes crates.io publishing) [7edbb9e](https://github.com/morphy2k/rss-forwarder/commit/7edbb9e)
