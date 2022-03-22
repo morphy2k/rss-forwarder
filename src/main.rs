@@ -154,7 +154,7 @@ fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<Vec<Task<
             info!("Start watcher for \"{}\"", name);
 
             if let Err(e) = watcher.watch(rx).await {
-                error!("Watcher for \"{}\" stopped with an error: {}", name, &e);
+                error!(feed =? name, error =? e, "Watcher stopped with an error");
                 return Err(e);
             }
 
