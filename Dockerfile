@@ -1,4 +1,4 @@
-FROM rust:1.56.1 as builder
+FROM rust:1.59 as builder
 
 ENV PKG_CONFIG_ALLOW_CROSS=1
 
@@ -6,7 +6,7 @@ WORKDIR /usr/src/rss-forwarder
 COPY . .
 RUN cargo install --path .
 
-FROM gcr.io/distroless/cc-debian10
+FROM gcr.io/distroless/cc-debian11
 
 LABEL repository="https://github.com/morphy2k/rss-forwarder"
 LABEL maintainer="Markus Wiegand <mail@morphy2k.dev>"
