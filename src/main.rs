@@ -12,14 +12,13 @@ use crate::{
 use std::{collections::HashMap, env, path::PathBuf, process, time::Duration};
 
 use error::Error;
-use futures::future;
 use log::{error, info};
 use pico_args::Arguments;
 use reqwest::Client;
 use tokio::{
     signal::unix::{signal, SignalKind},
     sync::broadcast,
-    task::JoinHandle,
+    task::JoinSet,
 };
 
 #[global_allocator]
@@ -62,9 +61,12 @@ async fn main() -> Result<()> {
 
     let client = build_client()?;
 
-    let tasks = watch_feeds(config.feeds, client)?;
-
-    future::try_join_all(tasks).await?;
+    let mut tasks = watch_feeds(config.feeds, client)?;
+    while let Some(res) = tasks.join_one().await? {
+        if res.is_err() {
+            tasks.abort_all()
+        }
+    }
 
     Ok(())
 }
@@ -131,12 +133,10 @@ fn parse_args() -> Result<Args> {
     Ok(args)
 }
 
-type Task<T> = JoinHandle<Result<T>>;
+fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<JoinSet<Result<()>>> {
+    let mut tasks = JoinSet::new();
 
-fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<Vec<Task<()>>> {
-    let mut tasks = Vec::with_capacity(feeds.len());
-
-    let (tx, _) = broadcast::channel(tasks.capacity());
+    let (tx, _) = broadcast::channel(feeds.len());
 
     for (name, config) in feeds.into_iter() {
         let sink = config.sink.sink(&client)?;
@@ -150,7 +150,7 @@ fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<Vec<Task<
 
         let rx = tx.subscribe();
 
-        tasks.push(tokio::spawn(async move {
+        tasks.spawn(async move {
             info!("Start watcher for \"{}\"", name);
 
             if let Err(e) = watcher.watch(rx).await {
@@ -158,10 +158,8 @@ fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<Vec<Task<
                 return Err(e);
             }
 
-            info!("Watcher for \"{}\" has stopped", name);
-
             Ok(())
-        }));
+        });
     }
 
     tokio::spawn(async move {
