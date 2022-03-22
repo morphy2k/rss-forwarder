@@ -16,7 +16,7 @@ exclude = ["/example", "/.github"]
 
 [dependencies]
 jemallocator = "0.3"
-tokio = { version = "1", features = [
+tokio = { version = "1.17", features = [
     "rt-multi-thread",
     "fs",
     "sync",
@@ -39,7 +39,7 @@ thiserror = "1"
 humantime-serde = "1"
 toml = "0.5"
 pico-args = "0.4"
-html2text = "0.2"
+html2text = "0.3"
 slack-bk = "0.1"
 
 [profile.release]
