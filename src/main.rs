@@ -13,7 +13,6 @@ use std::{collections::HashMap, env, path::PathBuf, process, time::Duration};
 
 use error::Error;
 use futures::future;
-use log::{error, info};
 use pico_args::Arguments;
 use reqwest::Client;
 use tokio::{
@@ -21,6 +20,7 @@ use tokio::{
     sync::broadcast,
     task::JoinHandle,
 };
+use tracing::{error, info};
 
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
@@ -50,7 +50,7 @@ async fn main() -> Result<()> {
             env::set_var("RUST_LOG", "info");
         }
     }
-    env_logger::init();
+    tracing_subscriber::fmt::init();
 
     let config = match Config::from_file(args.config).await {
         Ok(c) => c,
