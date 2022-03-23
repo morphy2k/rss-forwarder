@@ -20,7 +20,7 @@ jobs:
         rustup update stable
         rustup default stable
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: |
           ~/.cargo/bin/
@@ -54,7 +54,7 @@ jobs:
         rustup update stable
         rustup default stable
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: |
           ~/.cargo/bin/
