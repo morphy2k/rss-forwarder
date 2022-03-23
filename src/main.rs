@@ -45,9 +45,9 @@ async fn main() -> Result<()> {
 
     if env::var("RUST_LOG").is_err() {
         if args.debug {
-            env::set_var("RUST_LOG", "debug");
+            env::set_var("RUST_LOG", "rss_forwarder=debug,reqwest=debug");
         } else {
-            env::set_var("RUST_LOG", "info");
+            env::set_var("RUST_LOG", "rss_forwarder=info");
         }
     }
     tracing_subscriber::fmt::init();
