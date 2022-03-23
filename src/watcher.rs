@@ -8,9 +8,9 @@ use crate::{
 use std::time::Duration;
 
 use chrono::{DateTime, FixedOffset};
-use log::{debug, error};
 use reqwest::{Client, IntoUrl, Url};
 use tokio::sync::broadcast::Receiver;
+use tracing::{debug, error};
 
 const DEFAULT_INTERVAL: Duration = Duration::from_secs(60);
 
@@ -58,7 +58,7 @@ impl<T: Sink> Watcher<T> {
                 Ok(c) => c,
                 Err(e) => {
                     if is_retriable(&e) && self.retries_left > 0 {
-                        error!("error while getting items: {}", e);
+                        error!(error =? e, "error while getting items");
                         self.retries_left -= 1;
                         continue;
                     } else {
@@ -85,14 +85,14 @@ impl<T: Sink> Watcher<T> {
             };
 
             debug!(
-                "pushing {} items from \"{}\" feed",
-                news.len(),
-                feed.title()
+                feed = feed.title(),
+                count = news.len(),
+                "pushing items from feed"
             );
 
             if let Err(err) = self.sink.push(news).await {
                 if is_retriable(&err) && self.retries_left > 0 {
-                    error!("error while pushing items: {}", err);
+                    error!(error =? err, "error while pushing items");
                     self.retries_left -= 1;
                     continue;
                 } else {
