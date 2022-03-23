@@ -13,7 +13,6 @@ use std::{collections::HashMap, env, path::PathBuf, process, time::Duration};
 
 use error::Error;
 use futures::future;
-use log::{error, info};
 use pico_args::Arguments;
 use reqwest::Client;
 use tokio::{
@@ -21,6 +20,7 @@ use tokio::{
     sync::broadcast,
     task::JoinHandle,
 };
+use tracing::{error, info};
 
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
@@ -45,12 +45,12 @@ async fn main() -> Result<()> {
 
     if env::var("RUST_LOG").is_err() {
         if args.debug {
-            env::set_var("RUST_LOG", "debug");
+            env::set_var("RUST_LOG", "rss_forwarder=debug,reqwest=debug");
         } else {
-            env::set_var("RUST_LOG", "info");
+            env::set_var("RUST_LOG", "rss_forwarder=info");
         }
     }
-    env_logger::init();
+    tracing_subscriber::fmt::init();
 
     let config = match Config::from_file(args.config).await {
         Ok(c) => c,
@@ -154,7 +154,7 @@ fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<Vec<Task<
             info!("Start watcher for \"{}\"", name);
 
             if let Err(e) = watcher.watch(rx).await {
-                error!("Watcher for \"{}\" stopped with an error: {}", name, &e);
+                error!(feed =? name, error =? e, "Watcher stopped with an error");
                 return Err(e);
             }
 
