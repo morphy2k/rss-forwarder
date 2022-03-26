@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.0-alpha.0
+
+- Job handling updated. Errors now lead to the termination of the process [71320b9](https://github.com/morphy2k/rss-forwarder/commit/71320b9da4a2036e7440691bff59a2c76e930386)
+- Logging improved [e7022a8](https://github.com/morphy2k/rss-forwarder/commit/e7022a877e52d8dcdf01ed7c37d5e6de20623604)
+- Rust updated to 1.59
+- Distroless Docker image updated to Debian 11
+- Dependencies updated
+
 ## v0.5.1
 
 - Rust image updated (fixes container image building) [b3099b8](https://github.com/morphy2k/rss-forwarder/commit/b3099b8)
