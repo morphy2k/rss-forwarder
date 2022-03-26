@@ -1,10 +1,10 @@
 [package]
 name = "rss-forwarder"
 description = "Checks RSS feeds for new entries and forwards them."
-version = "0.5.1"
+version = "0.6.0-alpha.0"
 authors = ["Markus Wiegand <mail@morphy2k.dev>"]
 edition = "2021"
-rust-version = "1.56"
+rust-version = "1.59"
 keywords = ["rss", "atom", "cli", "webhook", "stdio"]
 categories = ["command-line-utilities"]
 repository = "https://github.com/morphy2k/rss-forwarder"
