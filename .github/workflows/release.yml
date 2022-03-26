@@ -72,7 +72,6 @@ jobs:
       run: |
         cargo build --release --verbose
         mv target/release/rss-forwarder rss-forwarder-linux-x86_64
-        strip rss-forwarder-linux-x86_64
 
     - name: Upload
       uses: actions/upload-artifact@v2
