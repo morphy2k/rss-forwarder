@@ -74,7 +74,7 @@ jobs:
         mv target/release/rss-forwarder rss-forwarder-linux-x86_64
 
     - name: Upload
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: Binary
         path: rss-forwarder-linux-x86_64
