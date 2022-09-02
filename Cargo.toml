@@ -4,7 +4,7 @@ description = "Checks RSS feeds for new entries and forwards them."
 version = "0.6.0-alpha.0"
 authors = ["Markus Wiegand <mail@morphy2k.dev>"]
 edition = "2021"
-rust-version = "1.59"
+rust-version = "1.63"
 keywords = ["rss", "atom", "cli", "webhook", "stdio"]
 categories = ["command-line-utilities"]
 repository = "https://github.com/morphy2k/rss-forwarder"
@@ -15,8 +15,8 @@ exclude = ["/example", "/.github"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-jemallocator = "0.3"
-tokio = { version = "1.17", features = [
+jemallocator = "0.5"
+tokio = { version = "1.21", features = [
     "rt-multi-thread",
     "fs",
     "sync",
@@ -38,8 +38,8 @@ tracing-subscriber = "0.3"
 thiserror = "1"
 humantime-serde = "1"
 toml = "0.5"
-pico-args = "0.4"
-html2text = "0.3"
+pico-args = "0.5"
+html2text = "0.4"
 slack-bk = "0.1"
 
 [profile.release]

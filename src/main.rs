@@ -62,10 +62,18 @@ async fn main() -> Result<()> {
     let client = build_client()?;
 
     let mut tasks = watch_feeds(config.feeds, client)?;
-    while let Some(res) = tasks.join_one().await? {
-        if res.is_err() {
-            tasks.abort_all()
+    let mut task_failed = false;
+    while let Some(res) = tasks.join_next().await {
+        let abort = if let Ok(r) = res { r.is_err() } else { true };
+        if abort && !task_failed {
+            tasks.abort_all();
+            task_failed = true;
         }
+    }
+
+    if task_failed {
+        error!("Terminate due to a faulty watcher");
+        process::exit(1);
     }
 
     Ok(())
