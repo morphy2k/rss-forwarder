@@ -79,10 +79,7 @@ impl<T: Sink> Watcher<T> {
                 self.last_date = last.date().into();
             }
 
-            let news = match self.get_new_items(&items) {
-                Some(v) => v,
-                None => continue,
-            };
+            let Some(news) = self.get_new_items(&items) else { continue };
 
             debug!(
                 feed = feed.title(),
