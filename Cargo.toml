@@ -15,8 +15,7 @@ exclude = ["/example", "/.github"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-jemallocator = "0.5"
-tokio = { version = "1.21", features = [
+tokio = { version = "1.22", features = [
     "rt-multi-thread",
     "fs",
     "sync",
@@ -41,6 +40,9 @@ toml = "0.5"
 pico-args = "0.5"
 html2text = "0.4"
 slack-bk = "0.1"
+
+[target.'cfg(not(target_env = "msvc"))'.dependencies]
+jemallocator = "0.5"
 
 [profile.release]
 lto = true
