@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.6.0-beta.0
+
+- Exclude jemalloc for MSVC target (This should make it possible to build on Windows) [fd98808](https://github.com/morphy2k/rss-forwarder/commit/fd98808d737de1e8d5e4c8e13abe9e6b5034c7f3)
+- Fixed and improved behaivor on errors.
+- Rust updated to 1.66
+- Some internal minor improvements
+- Dependencies updated
+
 ## v0.6.0-alpha.0
 
 - Job handling updated. Errors now lead to the termination of the process [71320b9](https://github.com/morphy2k/rss-forwarder/commit/71320b9da4a2036e7440691bff59a2c76e930386)
