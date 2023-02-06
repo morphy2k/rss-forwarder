@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
     let args = match parse_args() {
         Ok(v) => v,
         Err(e) => {
-            eprintln!("Argument error: {}", e);
+            eprintln!("Argument error: {e}");
             process::exit(1);
         }
     };
@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
     let config = match Config::from_file(args.config).await {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("Error while reading config: {}", e);
+            eprintln!("Error while reading config: {e}");
             process::exit(1);
         }
     };
@@ -108,14 +108,13 @@ const OPTIONS: &str = "\
 fn print_help() {
     print!(
         "\
-{} v{} by {}
-{}
+{NAME} v{VERSION} by {AUTHORS}
+{DESCRIPTION}
 
-    USAGE: {:} [OPTIONS] <CONFIG_FILE>
+    USAGE: {NAME} [OPTIONS] <CONFIG_FILE>
 
-    {}
+    {OPTIONS}
 ",
-        NAME, VERSION, AUTHORS, DESCRIPTION, NAME, OPTIONS,
     );
 }
 
@@ -128,7 +127,7 @@ fn parse_args() -> Result<Args> {
     }
 
     if pargs.contains(["-v", "--version"]) {
-        println!("v{}", VERSION);
+        println!("v{VERSION}");
         process::exit(0);
     }
 
