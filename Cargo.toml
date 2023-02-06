@@ -15,7 +15,7 @@ exclude = ["/example", "/.github"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.24", features = [
+tokio = { version = "1.25", features = [
     "rt-multi-thread",
     "fs",
     "sync",
@@ -36,7 +36,7 @@ tracing = "0.1"
 tracing-subscriber = "0.3"
 thiserror = "1"
 humantime-serde = "1"
-toml = "0.5"
+toml = "0.7"
 pico-args = "0.5"
 html2text = "0.4"
 slack-bk = "0.1"

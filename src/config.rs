@@ -12,8 +12,8 @@ pub struct Config {
 
 impl Config {
     pub async fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let file = fs::read(path).await?;
-        let config = toml::from_slice(&file[..])?;
+        let file = fs::read_to_string(path).await?;
+        let config = toml::from_str(&file)?;
 
         Ok(config)
     }
