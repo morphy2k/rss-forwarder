@@ -1,8 +1,19 @@
 # Changelog
 
+## v0.6.0
+
+_Changes since [v0.6.0-beta.0](#v060-beta0)_
+
+- Rust updated to 1.67
+- Dependencies updated
+
+### BREAKING
+
+Process is terminated when a watcher stops with an error.
+
 ## v0.6.0-beta.0
 
-- Exclude jemalloc for MSVC target (This should make it possible to build on Windows) [fd98808](https://github.com/morphy2k/rss-forwarder/commit/fd98808d737de1e8d5e4c8e13abe9e6b5034c7f3)
+- Exclude jemalloc for MSVC target ~~(This should make it possible to build on Windows)~~ [fd98808](https://github.com/morphy2k/rss-forwarder/commit/fd98808d737de1e8d5e4c8e13abe9e6b5034c7f3)
 - Fixed and improved behaivor on errors.
 - Rust updated to 1.66
 - Some internal minor improvements
