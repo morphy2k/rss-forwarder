@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.1
+
+- Dependencies updated (includes security fixes)
+
 ## v0.6.0
 
 _Changes since [v0.6.0-beta.0](#v060-beta0)_
