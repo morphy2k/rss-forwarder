@@ -21,9 +21,9 @@ use tokio::{
 };
 use tracing::{error, info};
 
-#[cfg(not(target_env = "msvc"))]
+#[cfg(feature = "mimalloc")]
 #[global_allocator]
-static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
+static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
