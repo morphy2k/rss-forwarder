@@ -14,6 +14,9 @@ exclude = ["/example", "/.github"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["mimalloc"]
+
 [dependencies]
 tokio = { version = "1.28", features = [
     "rt-multi-thread",
@@ -41,8 +44,8 @@ pico-args = "0.5"
 html2text = "0.6"
 slack-bk = "0.1"
 
-[target.'cfg(not(target_env = "msvc"))'.dependencies]
-jemallocator = "0.5"
+# Optional dependencies
+mimalloc = { version = "0.1", optional = true }
 
 [profile.release]
 lto = true
