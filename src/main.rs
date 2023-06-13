@@ -145,10 +145,10 @@ const DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 const OPTIONS: &str = "\
     OPTIONS:
-    --debug                Enables debug mode
-    -f, --format <FORMAT>  Sets the log format (json, pretty, compact)
-    -h, --help             Show help information
-    -v, --version          Show version info
+      --debug                Enables debug mode
+      -f, --format <FORMAT>  Sets the log format (json, pretty, compact)
+      -h, --help             Show help information
+      -v, --version          Show version info
 ";
 
 fn print_help() {
