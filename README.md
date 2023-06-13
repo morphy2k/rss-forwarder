@@ -48,6 +48,7 @@ USAGE: rss-forwarder [OPTIONS] <CONFIG_FILE>
 OPTIONS:
   --debug                Enables debug mode
   -f, --format <FORMAT>  Sets the log format (json, pretty, compact)
+  --no-color             Disables colored output
   -h, --help             Show help information
   -v, --version          Show version info
 ```

@@ -40,6 +40,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 struct Args {
     config: PathBuf,
     format: LogFormat,
+    no_color: bool,
     debug: bool,
 }
 
@@ -88,7 +89,7 @@ async fn main() -> Result<()> {
 
     let subscriber = tracing_subscriber::fmt()
         .with_env_filter(parse_env_filter(args.debug))
-        .with_ansi(stdout().is_terminal());
+        .with_ansi(stdout().is_terminal() && !args.no_color);
 
     match args.format {
         LogFormat::Json => subscriber.json().init(),
@@ -147,6 +148,7 @@ const OPTIONS: &str = "\
     OPTIONS:
       --debug                Enables debug mode
       -f, --format <FORMAT>  Sets the log format (json, pretty, compact)
+      --no-color             Disables colored output
       -h, --help             Show help information
       -v, --version          Show version info
 ";
@@ -182,6 +184,7 @@ fn parse_args() -> Result<Args> {
         format: pargs
             .opt_value_from_str(["-f", "--format"])?
             .unwrap_or_default(),
+        no_color: pargs.contains("--no-color"),
         config: pargs.free_from_str()?,
     };
 
