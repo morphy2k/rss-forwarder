@@ -43,12 +43,13 @@ See [GitHub container package](https://github.com/morphy2k/rss-forwarder/pkgs/co
 ## Usage
 
 ```TXT
-USAGE: rss-forwarder [OPTIONS] <CONFIG_FILE>
+    USAGE: rss-forwarder [OPTIONS] <CONFIG_FILE>
 
-OPTIONS:
---debug             Enables debug mode
--h, --help          Show help information
--v, --version       Show version info
+    OPTIONS:
+    --debug                Enables debug mode
+    -f, --format <FORMAT>  Sets the log format (json, pretty, compact)
+    -h, --help             Show help information
+    -v, --version          Show version info
 ```
 
 [Examples](example)
