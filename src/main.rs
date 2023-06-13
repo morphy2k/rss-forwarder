@@ -9,7 +9,15 @@ use crate::{
     watcher::Watcher,
 };
 
-use std::{collections::HashMap, env, path::PathBuf, process, time::Duration};
+use std::{
+    collections::HashMap,
+    env,
+    io::{stdout, IsTerminal},
+    path::PathBuf,
+    process,
+    str::FromStr,
+    time::Duration,
+};
 
 use error::Error;
 use pico_args::Arguments;
@@ -20,6 +28,7 @@ use tokio::{
     task::JoinSet,
 };
 use tracing::{error, info};
+use tracing_subscriber::EnvFilter;
 
 #[cfg(feature = "mimalloc")]
 #[global_allocator]
@@ -30,7 +39,41 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug)]
 struct Args {
     config: PathBuf,
+    format: LogFormat,
     debug: bool,
+}
+
+#[derive(Debug, Default)]
+enum LogFormat {
+    Json,
+    Pretty,
+    Compact,
+    #[default]
+    Default,
+}
+
+struct InvalidLogFormat;
+
+impl std::fmt::Display for InvalidLogFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "invalid log format")
+    }
+}
+
+impl FromStr for LogFormat {
+    type Err = InvalidLogFormat;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let value = match s {
+            "json" => LogFormat::Json,
+            "pretty" => LogFormat::Pretty,
+            "compact" => LogFormat::Compact,
+            "default" => LogFormat::Default,
+            _ => return Err(InvalidLogFormat),
+        };
+
+        Ok(value)
+    }
 }
 
 #[tokio::main]
@@ -43,14 +86,16 @@ async fn main() -> Result<()> {
         }
     };
 
-    if env::var("RUST_LOG").is_err() {
-        if args.debug {
-            env::set_var("RUST_LOG", "rss_forwarder=debug,reqwest=debug");
-        } else {
-            env::set_var("RUST_LOG", "rss_forwarder=info");
-        }
-    }
-    tracing_subscriber::fmt::init();
+    let subscriber = tracing_subscriber::fmt()
+        .with_env_filter(parse_env_filter(args.debug))
+        .with_ansi(stdout().is_terminal());
+
+    match args.format {
+        LogFormat::Json => subscriber.json().init(),
+        LogFormat::Pretty => subscriber.pretty().init(),
+        LogFormat::Compact => subscriber.compact().init(),
+        LogFormat::Default => subscriber.init(),
+    };
 
     let config = match Config::from_file(args.config).await {
         Ok(c) => c,
@@ -100,9 +145,10 @@ const DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 const OPTIONS: &str = "\
     OPTIONS:
-    --debug             Enables debug mode
-    -h, --help          Show help information
-    -v, --version       Show version info
+    --debug                Enables debug mode
+    -f, --format <FORMAT>  Sets the log format (json, pretty, compact)
+    -h, --help             Show help information
+    -v, --version          Show version info
 ";
 
 fn print_help() {
@@ -133,12 +179,27 @@ fn parse_args() -> Result<Args> {
 
     let args = Args {
         debug: pargs.contains("--debug"),
+        format: pargs
+            .opt_value_from_str(["-f", "--format"])?
+            .unwrap_or_default(),
         config: pargs.free_from_str()?,
     };
 
     pargs.finish();
 
     Ok(args)
+}
+
+fn parse_env_filter(debug: bool) -> EnvFilter {
+    match (env::var("RUST_LOG").is_err(), debug) {
+        (true, true) => EnvFilter::builder()
+            .parse("rss_forwarder=debug,reqwest=debug")
+            .expect("should be a valid directive"),
+        (true, false) => EnvFilter::builder()
+            .parse("rss_forwarder=info")
+            .expect("should be a valid directive"),
+        (false, _) => EnvFilter::from_default_env(),
+    }
 }
 
 fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<JoinSet<Result<()>>> {
