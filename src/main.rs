@@ -42,6 +42,7 @@ struct Args {
     format: LogFormat,
     no_color: bool,
     debug: bool,
+    verbose: bool,
 }
 
 #[derive(Debug, Default)]
@@ -88,7 +89,7 @@ async fn main() -> Result<()> {
     };
 
     let subscriber = tracing_subscriber::fmt()
-        .with_env_filter(parse_env_filter(args.debug))
+        .with_env_filter(parse_env_filter(args.debug, args.verbose))
         .with_ansi(stdout().is_terminal() && !args.no_color);
 
     match args.format {
@@ -181,6 +182,7 @@ fn parse_args() -> Result<Args> {
 
     let args = Args {
         debug: pargs.contains("--debug"),
+        verbose: pargs.contains("--verbose"),
         format: pargs
             .opt_value_from_str(["-f", "--format"])?
             .unwrap_or_default(),
@@ -193,15 +195,21 @@ fn parse_args() -> Result<Args> {
     Ok(args)
 }
 
-fn parse_env_filter(debug: bool) -> EnvFilter {
-    match (env::var("RUST_LOG").is_err(), debug) {
-        (true, true) => EnvFilter::builder()
+fn parse_env_filter(debug: bool, verbose: bool) -> EnvFilter {
+    match (env::var("RUST_LOG").is_err(), debug, verbose) {
+        (true, true, true) => EnvFilter::builder()
+            .parse("debug")
+            .expect("should be a valid directive"),
+        (true, false, true) => EnvFilter::builder()
+            .parse("info")
+            .expect("should be a valid directive"),
+        (true, true, false) => EnvFilter::builder()
             .parse("rss_forwarder=debug,reqwest=debug")
             .expect("should be a valid directive"),
-        (true, false) => EnvFilter::builder()
+        (true, false, false) => EnvFilter::builder()
             .parse("rss_forwarder=info")
             .expect("should be a valid directive"),
-        (false, _) => EnvFilter::from_default_env(),
+        (false, _, _) => EnvFilter::from_default_env(),
     }
 }
 
