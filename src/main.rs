@@ -46,11 +46,11 @@ struct Args {
 
 #[derive(Debug, Default)]
 enum LogFormat {
-    Json,
+    #[default]
+    Full,
     Pretty,
     Compact,
-    #[default]
-    Default,
+    Json,
 }
 
 struct InvalidLogFormat;
@@ -66,10 +66,10 @@ impl FromStr for LogFormat {
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         let value = match s {
-            "json" => LogFormat::Json,
+            "full" => LogFormat::Full,
             "pretty" => LogFormat::Pretty,
             "compact" => LogFormat::Compact,
-            "default" => LogFormat::Default,
+            "json" => LogFormat::Json,
             _ => return Err(InvalidLogFormat),
         };
 
@@ -92,10 +92,10 @@ async fn main() -> Result<()> {
         .with_ansi(stdout().is_terminal() && !args.no_color);
 
     match args.format {
-        LogFormat::Json => subscriber.json().init(),
+        LogFormat::Full => subscriber.init(),
         LogFormat::Pretty => subscriber.pretty().init(),
         LogFormat::Compact => subscriber.compact().init(),
-        LogFormat::Default => subscriber.init(),
+        LogFormat::Json => subscriber.json().init(),
     };
 
     let config = match Config::from_file(args.config).await {
