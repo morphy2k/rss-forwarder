@@ -89,6 +89,9 @@ async fn main() -> Result<()> {
     };
 
     let subscriber = tracing_subscriber::fmt()
+        .with_line_number(args.debug)
+        .with_thread_ids(args.debug)
+        .with_target(args.debug)
         .with_env_filter(parse_env_filter(args.debug, args.verbose))
         .with_ansi(stdout().is_terminal() && !args.no_color);
 
