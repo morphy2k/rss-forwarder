@@ -83,7 +83,7 @@ async fn main() -> Result<()> {
     let args = match parse_args() {
         Ok(v) => v,
         Err(e) => {
-            eprintln!("Argument error: {e}");
+            eprintln!("Error while parsing arguments: {e}\nUse --help for more information");
             process::exit(1);
         }
     };
@@ -150,11 +150,12 @@ const DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 const OPTIONS: &str = "\
     OPTIONS:
-      --debug                Enables debug mode
-      -f, --format <FORMAT>  Sets the log format (json, pretty, compact)
+      -f, --format <FORMAT>  Log format: full, pretty, compact, json (default: full)
       --no-color             Disables colored output
-      -h, --help             Show help information
-      -v, --version          Show version info
+      --debug                Enables debug mode
+      --verbose              Enables verbose mode
+      -h, --help             Show this help message
+      -v, --version          Show version information
 ";
 
 fn print_help() {
