@@ -47,7 +47,7 @@ USAGE: rss-forwarder [OPTIONS] <CONFIG_FILE>
 
 OPTIONS:
   -f, --format <FORMAT>  Log format: full, pretty, compact, json (default: full)
-  --no-color             Disables colored output
+  --color <WHEN>         Colorize output: auto, always, never (default: auto)
   --debug                Enables debug mode
   --verbose              Enables verbose mode
   -h, --help             Show this help message

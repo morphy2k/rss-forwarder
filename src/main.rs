@@ -40,7 +40,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 struct Args {
     config: PathBuf,
     format: LogFormat,
-    no_color: bool,
+    color: AnsiOutput,
     debug: bool,
     verbose: bool,
 }
@@ -78,6 +78,47 @@ impl FromStr for LogFormat {
     }
 }
 
+#[derive(Debug, Default)]
+enum AnsiOutput {
+    #[default]
+    Auto,
+    Always,
+    Never,
+}
+
+impl AnsiOutput {
+    fn is_enabled(&self) -> bool {
+        match self {
+            AnsiOutput::Auto => stdout().is_terminal(),
+            AnsiOutput::Always => true,
+            AnsiOutput::Never => false,
+        }
+    }
+}
+
+struct InvalidAnsiOutput;
+
+impl std::fmt::Display for InvalidAnsiOutput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "invalid ansi output")
+    }
+}
+
+impl FromStr for AnsiOutput {
+    type Err = InvalidAnsiOutput;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let value = match s {
+            "auto" => AnsiOutput::Auto,
+            "always" => AnsiOutput::Always,
+            "never" => AnsiOutput::Never,
+            _ => return Err(InvalidAnsiOutput),
+        };
+
+        Ok(value)
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = match parse_args() {
@@ -93,7 +134,7 @@ async fn main() -> Result<()> {
         .with_thread_ids(args.debug)
         .with_target(args.debug)
         .with_env_filter(parse_env_filter(args.debug, args.verbose))
-        .with_ansi(stdout().is_terminal() && !args.no_color);
+        .with_ansi(args.color.is_enabled());
 
     match args.format {
         LogFormat::Full => subscriber.init(),
@@ -151,7 +192,7 @@ const DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 const OPTIONS: &str = "\
     OPTIONS:
       -f, --format <FORMAT>  Log format: full, pretty, compact, json (default: full)
-      --no-color             Disables colored output
+      --color <WHEN>         Colorize output: auto, always, never (default: auto)
       --debug                Enables debug mode
       --verbose              Enables verbose mode
       -h, --help             Show this help message
@@ -190,7 +231,7 @@ fn parse_args() -> Result<Args> {
         format: pargs
             .opt_value_from_str(["-f", "--format"])?
             .unwrap_or_default(),
-        no_color: pargs.contains("--no-color"),
+        color: pargs.opt_value_from_str("--color")?.unwrap_or_default(),
         config: pargs.free_from_str()?,
     };
 
