@@ -6,6 +6,8 @@ use self::item::{FeedItem, Item, Source};
 
 use std::{cmp::Reverse, io::BufRead};
 
+use tracing::debug;
+
 #[derive(Debug)]
 pub enum Feed {
     Rss(rss::Channel),
@@ -24,9 +26,15 @@ impl<'a> Feed {
                     let feed = atom_syndication::Feed::read_from(reader)?;
                     Self::Atom(feed)
                 }
-                _ => return Err(e.into()),
+                _ => return Err(e)?,
             },
         };
+
+        debug!(
+            format = %if feed.is_rss() { "RSS" } else { "Atom" },
+            items = feed.items().len(),
+            "parsed feed"
+        );
 
         Ok(feed)
     }
@@ -77,5 +85,21 @@ impl<'a> Feed {
         items.sort_unstable_by_key(|v| Reverse(v.date()));
 
         items
+    }
+
+    /// Returns `true` if the feed is [`Rss`].
+    ///
+    /// [`Rss`]: Feed::Rss
+    #[must_use]
+    pub fn is_rss(&self) -> bool {
+        matches!(self, Self::Rss(..))
+    }
+
+    /// Returns `true` if the feed is [`Atom`].
+    ///
+    /// [`Atom`]: Feed::Atom
+    #[must_use]
+    pub fn is_atom(&self) -> bool {
+        matches!(self, Self::Atom(..))
     }
 }

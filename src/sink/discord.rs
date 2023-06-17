@@ -10,6 +10,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, FixedOffset};
 use reqwest::{Client, IntoUrl, Url};
 use serde::Serialize;
+use tracing::debug;
 
 const PROVIDER: EmbedProvider<'static> = EmbedProvider {
     name: env!("CARGO_PKG_NAME"),
@@ -33,6 +34,14 @@ impl Discord {
 
 #[async_trait]
 impl Sink for Discord {
+    #[tracing::instrument(
+        name = "push",
+        skip(self, items),
+        fields(
+            url = %self.url,
+        )
+        level = "debug"
+    )]
     async fn push<'a, T>(&self, items: &'a [T]) -> Result<()>
     where
         T: FeedItem<'a>,
@@ -40,6 +49,8 @@ impl Sink for Discord {
         let length = items.len();
         let limit = 10_usize;
         let chunk_count = (length as f64 / limit as f64).ceil() as usize;
+
+        debug!(count = length, chunks = chunk_count, "pushing items");
 
         let mut chunks: Vec<Body> = Vec::with_capacity(chunk_count);
         for i in 0..chunk_count {
@@ -64,7 +75,16 @@ impl Sink for Discord {
         Ok(())
     }
 
+    #[tracing::instrument(
+        name = "shutdown",
+        skip(self),
+        fields(
+            url = %self.url,
+        )
+        level = "debug"
+    )]
     async fn shutdown(self) -> Result<()> {
+        debug!("shutting down");
         Ok(())
     }
 }

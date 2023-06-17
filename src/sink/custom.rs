@@ -17,9 +17,12 @@ use tokio::{
     sync::mpsc::{self, Sender},
     task::JoinHandle,
 };
+use tracing::debug;
 
 #[derive(Debug)]
 pub struct Custom {
+    command: String,
+    arguments: Vec<String>,
     process: Child,
     stdin_task: JoinHandle<Result<()>>,
     kill_tx: Sender<()>,
@@ -27,18 +30,14 @@ pub struct Custom {
 }
 
 impl Custom {
-    pub fn new<C, A>(cmd: C, args: A) -> Result<Self>
-    where
-        C: AsRef<str>,
-        A: IntoIterator<Item = String>,
-    {
-        let mut cmd = Command::new(cmd.as_ref())
-            .args(args)
+    pub fn new(cmd: String, args: Vec<String>) -> Result<Self> {
+        let mut process = Command::new(&cmd)
+            .args(&args)
             .stdin(Stdio::piped())
             .kill_on_drop(true)
             .spawn()?;
 
-        let mut stdin = cmd
+        let mut stdin = process
             .stdin
             .take()
             .ok_or_else(|| Error::Sink("stdin not captured".to_string()))?;
@@ -64,7 +63,9 @@ impl Custom {
         });
 
         Ok(Self {
-            process: cmd,
+            command: cmd,
+            arguments: args,
+            process,
             stdin_task: task,
             kill_tx,
             data_tx,
@@ -74,10 +75,22 @@ impl Custom {
 
 #[async_trait]
 impl Sink for Custom {
+    #[tracing::instrument(
+        name = "push",
+        skip(self, items),
+        fields(
+            pid = self.process.id(),
+            command = %self.command,
+            arguments = %self.arguments.join(" "),
+        ),
+        level = "debug"
+    )]
     async fn push<'a, T>(&self, items: &'a [T]) -> Result<()>
     where
         T: FeedItem<'a>,
     {
+        debug!(count = items.len(), "pushing items");
+
         for item in items {
             let obj = Object::try_from_item(item)?;
             let mut json = serde_json::to_vec(&obj)?;
@@ -91,7 +104,19 @@ impl Sink for Custom {
         Ok(())
     }
 
+    #[tracing::instrument(
+        name = "shutdown",
+        skip(self),
+        fields(
+            pid = self.process.id(),
+            commad = %self.command,
+            arguments = %self.arguments.join(" "),
+        ),
+        level = "debug"
+    )]
     async fn shutdown(mut self) -> Result<()> {
+        debug!("shutting down");
+
         if !self.kill_tx.is_closed() {
             self.kill_tx.send(()).await.unwrap();
         }

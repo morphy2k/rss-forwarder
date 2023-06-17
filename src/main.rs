@@ -27,7 +27,7 @@ use tokio::{
     sync::broadcast,
     task::JoinSet,
 };
-use tracing::{error, info};
+use tracing::{debug, error, info};
 use tracing_subscriber::EnvFilter;
 
 #[cfg(feature = "mimalloc")]
@@ -164,7 +164,7 @@ async fn main() -> Result<()> {
     }
 
     if task_failed {
-        error!("Terminate due to a faulty watcher");
+        eprintln!("Terminate due to a faulty watcher");
         process::exit(1);
     }
 
@@ -249,7 +249,7 @@ fn parse_env_filter(debug: bool, verbose: bool) -> EnvFilter {
             .parse("info")
             .expect("should be a valid directive"),
         (true, true, false) => EnvFilter::builder()
-            .parse("rss_forwarder=debug,reqwest=debug")
+            .parse("rss_forwarder=debug")
             .expect("should be a valid directive"),
         (true, false, false) => EnvFilter::builder()
             .parse("rss_forwarder=info")
@@ -276,11 +276,15 @@ fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<JoinSet<R
         let rx = tx.subscribe();
 
         tasks.spawn(async move {
-            info!("Start watcher for \"{}\"", name);
+            info!("starting watcher for \"{name}\"");
 
-            if let Err(e) = watcher.watch(rx).await {
-                error!(feed =? name, error =? e, "Watcher stopped with an error");
-                return Err(e);
+            if let Err(err) = watcher.watch(rx).await {
+                error!(
+                    feed = %name,
+                    error = %err,
+                    "shutting down watcher due to an error",
+                );
+                return Err(err);
             }
 
             Ok(())
@@ -295,6 +299,8 @@ fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<JoinSet<R
             _ = sig_int.recv() => {},
             _ = sig_term.recv() => {},
         };
+
+        debug!("received termination signal");
 
         tx.send(()).unwrap();
     });
