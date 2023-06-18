@@ -102,7 +102,7 @@ impl Sink for Custom {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct Object<'a> {
     title: &'a str,
     description: Option<&'a str>,

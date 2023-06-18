@@ -186,19 +186,20 @@ impl<'a> FeedItem<'a> for atom_syndication::Entry {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize)]
 pub struct Author<'a> {
     pub name: &'a str,
     pub email: Option<&'a str>,
     pub uri: Option<&'a str>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize)]
 pub struct Source<'a> {
     pub title: &'a str,
     pub url: Option<&'a str>,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum Item<'a> {
     Rss {
         source: Source<'a>,
