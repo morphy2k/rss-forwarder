@@ -9,7 +9,15 @@ use crate::{
     watcher::Watcher,
 };
 
-use std::{collections::HashMap, env, path::PathBuf, process, time::Duration};
+use std::{
+    collections::HashMap,
+    env,
+    io::{stdout, IsTerminal},
+    path::PathBuf,
+    process,
+    str::FromStr,
+    time::Duration,
+};
 
 use error::Error;
 use pico_args::Arguments;
@@ -19,7 +27,8 @@ use tokio::{
     sync::broadcast,
     task::JoinSet,
 };
-use tracing::{error, info};
+use tracing::{debug, error, info};
+use tracing_subscriber::EnvFilter;
 
 #[cfg(feature = "mimalloc")]
 #[global_allocator]
@@ -30,7 +39,84 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug)]
 struct Args {
     config: PathBuf,
+    format: LogFormat,
+    color: AnsiOutput,
     debug: bool,
+    verbose: bool,
+}
+
+#[derive(Debug, Default)]
+enum LogFormat {
+    #[default]
+    Full,
+    Pretty,
+    Compact,
+    Json,
+}
+
+struct InvalidLogFormat;
+
+impl std::fmt::Display for InvalidLogFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "invalid log format")
+    }
+}
+
+impl FromStr for LogFormat {
+    type Err = InvalidLogFormat;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let value = match s {
+            "full" => LogFormat::Full,
+            "pretty" => LogFormat::Pretty,
+            "compact" => LogFormat::Compact,
+            "json" => LogFormat::Json,
+            _ => return Err(InvalidLogFormat),
+        };
+
+        Ok(value)
+    }
+}
+
+#[derive(Debug, Default)]
+enum AnsiOutput {
+    #[default]
+    Auto,
+    Always,
+    Never,
+}
+
+impl AnsiOutput {
+    fn is_enabled(&self) -> bool {
+        match self {
+            AnsiOutput::Auto => stdout().is_terminal(),
+            AnsiOutput::Always => true,
+            AnsiOutput::Never => false,
+        }
+    }
+}
+
+struct InvalidAnsiOutput;
+
+impl std::fmt::Display for InvalidAnsiOutput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "invalid ansi output")
+    }
+}
+
+impl FromStr for AnsiOutput {
+    type Err = InvalidAnsiOutput;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let value = match s {
+            "auto" => AnsiOutput::Auto,
+            "always" => AnsiOutput::Always,
+            "never" => AnsiOutput::Never,
+            _ => return Err(InvalidAnsiOutput),
+        };
+
+        Ok(value)
+    }
 }
 
 #[tokio::main]
@@ -38,19 +124,24 @@ async fn main() -> Result<()> {
     let args = match parse_args() {
         Ok(v) => v,
         Err(e) => {
-            eprintln!("Argument error: {e}");
+            eprintln!("Error while parsing arguments: {e}\nUse --help for more information");
             process::exit(1);
         }
     };
 
-    if env::var("RUST_LOG").is_err() {
-        if args.debug {
-            env::set_var("RUST_LOG", "rss_forwarder=debug,reqwest=debug");
-        } else {
-            env::set_var("RUST_LOG", "rss_forwarder=info");
-        }
-    }
-    tracing_subscriber::fmt::init();
+    let subscriber = tracing_subscriber::fmt()
+        .with_line_number(args.debug)
+        .with_thread_ids(args.debug)
+        .with_target(args.debug)
+        .with_env_filter(parse_env_filter(args.debug, args.verbose))
+        .with_ansi(args.color.is_enabled());
+
+    match args.format {
+        LogFormat::Full => subscriber.init(),
+        LogFormat::Pretty => subscriber.pretty().init(),
+        LogFormat::Compact => subscriber.compact().init(),
+        LogFormat::Json => subscriber.json().init(),
+    };
 
     let config = match Config::from_file(args.config).await {
         Ok(c) => c,
@@ -73,7 +164,7 @@ async fn main() -> Result<()> {
     }
 
     if task_failed {
-        error!("Terminate due to a faulty watcher");
+        eprintln!("Terminate due to a faulty watcher");
         process::exit(1);
     }
 
@@ -100,9 +191,12 @@ const DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 const OPTIONS: &str = "\
     OPTIONS:
-    --debug             Enables debug mode
-    -h, --help          Show help information
-    -v, --version       Show version info
+      -f, --format <FORMAT>  Log format: full, pretty, compact, json (default: full)
+      --color <WHEN>         Colorize output: auto, always, never (default: auto)
+      --debug                Enables debug mode
+      --verbose              Enables verbose mode
+      -h, --help             Show this help message
+      -v, --version          Show version information
 ";
 
 fn print_help() {
@@ -133,12 +227,35 @@ fn parse_args() -> Result<Args> {
 
     let args = Args {
         debug: pargs.contains("--debug"),
+        verbose: pargs.contains("--verbose"),
+        format: pargs
+            .opt_value_from_str(["-f", "--format"])?
+            .unwrap_or_default(),
+        color: pargs.opt_value_from_str("--color")?.unwrap_or_default(),
         config: pargs.free_from_str()?,
     };
 
     pargs.finish();
 
     Ok(args)
+}
+
+fn parse_env_filter(debug: bool, verbose: bool) -> EnvFilter {
+    match (env::var("RUST_LOG").is_err(), debug, verbose) {
+        (true, true, true) => EnvFilter::builder()
+            .parse("debug")
+            .expect("should be a valid directive"),
+        (true, false, true) => EnvFilter::builder()
+            .parse("info")
+            .expect("should be a valid directive"),
+        (true, true, false) => EnvFilter::builder()
+            .parse("rss_forwarder=debug")
+            .expect("should be a valid directive"),
+        (true, false, false) => EnvFilter::builder()
+            .parse("rss_forwarder=info")
+            .expect("should be a valid directive"),
+        (false, _, _) => EnvFilter::from_default_env(),
+    }
 }
 
 fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<JoinSet<Result<()>>> {
@@ -159,11 +276,15 @@ fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<JoinSet<R
         let rx = tx.subscribe();
 
         tasks.spawn(async move {
-            info!("Start watcher for \"{}\"", name);
+            info!("starting watcher for \"{name}\"");
 
-            if let Err(e) = watcher.watch(rx).await {
-                error!(feed =? name, error =? e, "Watcher stopped with an error");
-                return Err(e);
+            if let Err(err) = watcher.watch(rx).await {
+                error!(
+                    feed = %name,
+                    error = %err,
+                    "shutting down watcher due to an error",
+                );
+                return Err(err);
             }
 
             Ok(())
@@ -178,6 +299,8 @@ fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<JoinSet<R
             _ = sig_int.recv() => {},
             _ = sig_term.recv() => {},
         };
+
+        debug!("received termination signal");
 
         tx.send(()).unwrap();
     });

@@ -43,7 +43,16 @@ rss = { version = "2", default-features = false }
 atom_syndication = { version = "0.12", default-features = false }
 chrono = { version = "0.4", features = ["serde"], default-features = false }
 tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = [
+    "std",
+    "fmt",
+    "tracing-log",
+    "smallvec",
+    "parking_lot",
+    "env-filter",
+    "ansi",
+    "json",
+], default-features = false }
 thiserror = "1"
 humantime-serde = "1"
 toml = "0.7"

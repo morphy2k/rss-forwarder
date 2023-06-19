@@ -22,7 +22,7 @@ pub struct Watcher<T: Sink> {
     client: Client,
     retry_limit: usize,
     retries_left: usize,
-    last_date: Option<DateTime<FixedOffset>>,
+    last_date: DateTime<FixedOffset>,
 }
 
 impl<T: Sink> Watcher<T> {
@@ -40,10 +40,20 @@ impl<T: Sink> Watcher<T> {
             client,
             retry_limit,
             retries_left: retry_limit,
-            last_date: None,
+            last_date: DateTime::default(),
         })
     }
 
+    #[tracing::instrument(
+        name = "watch",
+        skip(self, kill),
+        fields(
+            url = %self.url,
+            interval = ?self.interval,
+            retry_limit = self.retry_limit,
+        )
+        level = "debug"
+    )]
     pub async fn watch(mut self, mut kill: Receiver<()>) -> Result<()> {
         let mut interval = tokio::time::interval(self.interval);
 
@@ -56,53 +66,78 @@ impl<T: Sink> Watcher<T> {
 
             let feed = match self.fetch().await {
                 Ok(c) => c,
-                Err(e) => {
-                    if is_retriable(&e) && self.retries_left > 0 {
-                        error!(error =? e, "error while getting items");
+                Err(err) => {
+                    if is_retriable(&err) && self.retries_left > 0 {
                         self.retries_left -= 1;
+                        error!(
+                            error = %err,
+                            retries_left = self.retries_left,
+                            "error while fetching feed",
+                        );
                         continue;
                     } else {
-                        return Err(e);
+                        return Err(err);
                     }
                 }
             };
 
             let items = feed.items();
 
-            if items.is_empty() {
+            let Some(last) = items.first() else {
+                debug!("no items in feed");
+                continue;
+            };
+
+            if self.last_date.timestamp() == 0 {
+                debug!(
+                    date = %last.date(),
+                    "no date set, setting to last item date",
+                );
+                self.last_date = last.date();
                 continue;
             }
 
-            let last = items.first().unwrap();
-
-            if self.last_date.is_none() {
-                self.last_date = last.date().into();
-            }
-
-            let Some(news) = self.get_new_items(&items) else { continue };
+            let Some(news) = self.get_new_items(&items) else {
+                debug!(
+                    since = %self.last_date,
+                    "found no new items",
+                );
+                continue;
+            };
 
             debug!(
-                feed = feed.title(),
                 count = news.len(),
-                "pushing items from feed"
+                since = %self.last_date,
+                "found new items",
             );
 
             if let Err(err) = self.sink.push(news).await {
                 if is_retriable(&err) && self.retries_left > 0 {
-                    error!(error =? err, "error while pushing items");
                     self.retries_left -= 1;
+                    error!(
+                        error = %err,
+                        retries_left = self.retries_left,
+                        "error while pushing items to sink",
+                    );
                     continue;
                 } else {
                     return Err(err);
                 }
             }
 
-            self.last_date = last.date().into();
+            debug!(
+                date = %last.date(),
+                "updating last date",
+            );
+            self.last_date = last.date();
 
             if self.retries_left != self.retry_limit {
+                debug!("resetting retries");
                 self.retries_left = self.retry_limit;
             }
         }
+
+        debug!("shutting down");
 
         self.sink.shutdown().await?;
 
@@ -114,9 +149,8 @@ impl<T: Sink> Watcher<T> {
         I: FeedItem<'a>,
     {
         let mut idx = 0;
-
         for (i, item) in items.iter().enumerate() {
-            if item.date().gt(&self.last_date.unwrap()) {
+            if item.date().gt(&self.last_date) {
                 idx = i;
             } else {
                 if i == 0 {
@@ -130,6 +164,8 @@ impl<T: Sink> Watcher<T> {
     }
 
     async fn fetch(&self) -> Result<Feed> {
+        debug!("fetching feed");
+
         let res = self.client.get(self.url.as_ref()).send().await?;
         let body = res.error_for_status()?.bytes().await?;
 

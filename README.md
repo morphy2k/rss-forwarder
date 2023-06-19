@@ -46,9 +46,12 @@ See [GitHub container package](https://github.com/morphy2k/rss-forwarder/pkgs/co
 USAGE: rss-forwarder [OPTIONS] <CONFIG_FILE>
 
 OPTIONS:
---debug             Enables debug mode
--h, --help          Show help information
--v, --version       Show version info
+  -f, --format <FORMAT>  Log format: full, pretty, compact, json (default: full)
+  --color <WHEN>         Colorize output: auto, always, never (default: auto)
+  --debug                Enables debug mode
+  --verbose              Enables verbose mode
+  -h, --help             Show this help message
+  -v, --version          Show version information
 ```
 
 [Examples](example)
