@@ -95,7 +95,7 @@ struct Body<'a> {
     embeds: Vec<EmbedObject<'a>>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct EmbedObject<'a> {
     title: String,
@@ -130,7 +130,7 @@ where
     }
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
 struct EmbedAuthor<'a> {
     name: &'a str,
@@ -154,13 +154,13 @@ where
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct EmbedImage<'a> {
     url: &'a str,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct EmbedFooter<'a> {
     text: &'a str,
@@ -182,7 +182,7 @@ where
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Copy, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct EmbedProvider<'a> {
     name: &'a str,

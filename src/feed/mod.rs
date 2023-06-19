@@ -67,18 +67,12 @@ impl<'a> Feed {
             Feed::Rss(c) => c
                 .items()
                 .iter()
-                .map(|v| Item::Rss {
-                    source: source.clone(),
-                    item: v,
-                })
+                .map(|v| Item::Rss { source, item: v })
                 .collect(),
             Feed::Atom(f) => f
                 .entries()
                 .iter()
-                .map(|v| Item::Atom {
-                    source: source.clone(),
-                    entry: v,
-                })
+                .map(|v| Item::Atom { source, entry: v })
                 .collect(),
         };
 
