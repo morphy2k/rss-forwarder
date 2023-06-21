@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.7.0-alpha.1
+
+- Log formats **full**, **pretty**, **compact** and **json** added [b91d0be](https://github.com/morphy2k/rss-forwarder/commit/b91d0be8e56969643d66b40f34ffbd0d9ec9302d)
+- Ability to control the ANSI color output added [b91d0be](https://github.com/morphy2k/rss-forwarder/commit/b91d0be8e56969643d66b40f34ffbd0d9ec9302d)
+- Verbose flag added [b91d0be](https://github.com/morphy2k/rss-forwarder/commit/b91d0be8e56969643d66b40f34ffbd0d9ec9302d)
+- Log messages improved [b91d0be](https://github.com/morphy2k/rss-forwarder/commit/b91d0be8e56969643d66b40f34ffbd0d9ec9302d)
+- SOCKS5 proxy support added [ad4cc89](https://github.com/morphy2k/rss-forwarder/commit/ad4cc89beabdffaa0237ee2ca4eded88dcc339c7)
+- HTTP compression **GZIP**, **Deflate** and **Brotli** support added [ad4cc89](https://github.com/morphy2k/rss-forwarder/commit/ad4cc89beabdffaa0237ee2ca4eded88dcc339c7)
+- Default TLS library changed to [`rustls`](https://github.com/rustls/rustls) [ad4cc89](https://github.com/morphy2k/rss-forwarder/commit/ad4cc89beabdffaa0237ee2ca4eded88dcc339c7)
+- Default DNS resolver changed to [`trust-dns`](https://github.com/bluejekyll/trust-dns) [ad4cc89](https://github.com/morphy2k/rss-forwarder/commit/ad4cc89beabdffaa0237ee2ca4eded88dcc339c7)
+- Memory allocator changed to [`mimalloc`](https://github.com/microsoft/mimalloc) [33530e1](https://github.com/morphy2k/rss-forwarder/commit/33530e18b9f1a90cea38d664f74fd0e9df9595df)
+- Rust to 1.70 updated
+- Dependencies updated
+
 ## v0.6.1
 
 - Dependencies updated (includes security fixes)
