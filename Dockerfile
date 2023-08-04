@@ -1,4 +1,4 @@
-FROM rust:1.70.0 as builder
+FROM rust:1.71.1 as builder
 
 ENV PKG_CONFIG_ALLOW_CROSS=1
 
