@@ -25,7 +25,7 @@ compression = ["reqwest/deflate", "reqwest/brotli", "reqwest/gzip"]
 proxy = ["reqwest/socks"]
 
 [dependencies]
-tokio = { version = "1.28", features = [
+tokio = { version = "1.30", features = [
     "rt-multi-thread",
     "fs",
     "sync",
