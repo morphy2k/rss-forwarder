@@ -177,7 +177,11 @@ impl<T: Sink> Watcher<T> {
 
 fn is_retriable(err: &Error) -> bool {
     match err {
-        Error::Request(e) => e.is_timeout() || e.is_connect() || e.is_status(),
+        Error::Request(e) if e.is_timeout() || e.is_connect() => true,
+        Error::Request(e) if e.is_status() => {
+            let status = e.status().unwrap();
+            status.is_server_error()
+        }
         _ => false,
     }
 }
