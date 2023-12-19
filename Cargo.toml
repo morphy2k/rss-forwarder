@@ -2,7 +2,7 @@
 name = "rss-forwarder"
 description = "Checks RSS feeds for new entries and forwards them."
 version = "0.7.0-alpha.1"
-authors = ["Markus Wiegand <mail@morphy2k.dev>"]
+authors = ["Markus Wiegand <mail@morphy.dev>"]
 edition = "2021"
 rust-version = "1.70"
 keywords = ["rss", "atom", "cli", "webhook", "stdio"]
