@@ -25,7 +25,7 @@ compression = ["reqwest/deflate", "reqwest/brotli", "reqwest/gzip"]
 proxy = ["reqwest/socks"]
 
 [dependencies]
-tokio = { version = "1.28", features = [
+tokio = { version = "1.35", features = [
     "rt-multi-thread",
     "fs",
     "sync",
@@ -55,9 +55,9 @@ tracing-subscriber = { version = "0.3", features = [
 ], default-features = false }
 thiserror = "1"
 humantime-serde = "1"
-toml = "0.7"
+toml = "0.8"
 pico-args = "0.5"
-html2text = "0.6"
+html2text = "0.7"
 slack-bk = "0.1"
 
 # Optional dependencies
