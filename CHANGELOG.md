@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.0-beta.1
+
+- Status error handling improved. Retries no longer take place for client errors (4xx) [4a8eda1](<https://github.com/morphy2k/rss-forwarder/commit/4a8eda155eb1a2ed9b399adccac7248d2da7652a>)
+- Rust to 1.74.1 updated
+- Dependencies updated
+
 ## v0.7.0-alpha.1
 
 - Log formats **full**, **pretty**, **compact** and **json** added [b91d0be](https://github.com/morphy2k/rss-forwarder/commit/b91d0be8e56969643d66b40f34ffbd0d9ec9302d)
