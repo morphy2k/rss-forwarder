@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.0-beta.2
+
+- HTTP header `Accept` default set to `application/atom+xml, application/rss+xml, application/xml, text/xml` [#179](https://github.com/morphy2k/rss-forwarder/pull/178)
+- Rust to 1.75 updated
+- Dependencies updated
+
 ## v0.7.0-beta.1
 
 - Status error handling improved. Retries no longer take place for client errors (4xx) [4a8eda1](<https://github.com/morphy2k/rss-forwarder/commit/4a8eda155eb1a2ed9b399adccac7248d2da7652a>)
