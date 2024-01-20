@@ -21,7 +21,10 @@ use std::{
 
 use error::Error;
 use pico_args::Arguments;
-use reqwest::Client;
+use reqwest::{
+    header::{self, HeaderMap, HeaderName, HeaderValue},
+    Client,
+};
 use tokio::{
     signal::unix::{signal, SignalKind},
     sync::broadcast,
@@ -175,10 +178,22 @@ const USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VE
 
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(30);
 
+const DEFAULT_HEADERS: &[(HeaderName, &str)] = &[(
+    header::ACCEPT,
+    "application/atom+xml, application/rss+xml, application/xml, text/xml",
+)];
+
 fn build_client() -> Result<Client> {
+    let headers = HeaderMap::from_iter(
+        DEFAULT_HEADERS
+            .iter()
+            .map(|(k, v)| (k.clone(), HeaderValue::from_static(v))),
+    );
+
     let client = Client::builder()
         .timeout(DEFAULT_TIMEOUT)
         .user_agent(USER_AGENT)
+        .default_headers(headers)
         .build()?;
 
     Ok(client)
