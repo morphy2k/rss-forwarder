@@ -20,6 +20,9 @@ Checks RSS/Atom feeds for new entries and forwards them to different targets (ca
 
 ## Installation
 
+> [!NOTE]
+> Currently only **Linux x86_64** is officially supported. It may also work on other Unix-based platforms.
+
 ### Official binary
 
 [`jq`](https://stedolan.github.io/jq/) required!
@@ -33,7 +36,9 @@ sudo mv rss-forwarder-linux-x86_64 /usr/local/bin/rss-forwarder
 ### Cargo
 
 ```BASH
-cargo install rss-forwarder
+cargo install rss-forwarder@<version>
+# or from source
+cargo install --git https://github.com/morphy2k/rss-forwarder.git
 ```
 
 ### Container image
