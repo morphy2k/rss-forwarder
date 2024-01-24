@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.0-beta.3
+
+- Binaries and container images for multiple platforms added [#181](https://github.com/morphy2k/rss-forwarder/pull/181)
+- Dockerfile fixed and updated to Debian 12 [d7e26bd](<https://github.com/morphy2k/rss-forwarder/commit/d7e26bd318d2d50a24b9ccdb61568cd73294febd>)
+- Dependencies updated
+
 ## v0.7.0-beta.2
 
 - HTTP header `Accept` default set to `application/atom+xml, application/rss+xml, application/xml, text/xml` [#179](https://github.com/morphy2k/rss-forwarder/pull/178)
