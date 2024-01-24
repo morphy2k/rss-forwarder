@@ -56,12 +56,18 @@ arguments = ["-C", "./send.sh"]
 ### Install binary
 
 ```BASH
-curl -O https://github.com/morphy2k/rss-forwarder/releases/download/<VERSION>/rss-forwarder-linux-x86_64
-sudo chmod +x rss-forwarder-linux-x86_64
-sudo mv rss-forwarder-linux-x86_64 /usr/local/bin/rss-forwarder
+export VERSION=<VERSION>
+export TARGET=<TARGET>
+
+curl -O https://github.com/morphy2k/rss-forwarder/releases/download/v${VERSION}/${TARGET}.tar.gz
+tar -xzf ${TARGET}.tar.gz
+cd ${TARGET}
+sha256sum -c rss-forwarder.sha256
+sudo chmod +x rss-forwarder
+sudo mv rss-forwarder /usr/local/bin/rss-forwarder
 ```
 
-*Replace `<VERSION>` with the [latest release](https://github.com/morphy2k/rss-forwarder/releases/latest)*
+*Replace `<VERSION>` and `<TARGET>` with the version and target of your choice.*
 
 ### Add service user
 

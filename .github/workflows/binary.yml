@@ -1,0 +1,143 @@
+name: Build binary
+
+on:
+  push:
+    tags:
+      - v*
+
+env:
+    CARGO_TERM_COLOR: always
+
+jobs:
+
+    build:
+        name: Build ${{ matrix.platform.name }} binary
+        runs-on: ${{ matrix.platform.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                platform:
+                    - name: Linux x86_64
+                      os: ubuntu-latest
+                      target: x86_64-unknown-linux-gnu
+                      bin_name: rss-forwarder
+
+                    - name: Linux ARM64
+                      os: ubuntu-latest
+                      target: aarch64-unknown-linux-gnu
+                      target_upper: AARCH64_UNKNOWN_LINUX_GNU
+                      packages: g++-aarch64-linux-gnu libc6-dev-arm64-cross
+                      linker: aarch64-linux-gnu-gcc
+                      CC: aarch64-linux-gnu-gcc
+                      CXX: aarch64-linux-gnu-g++
+                      bin_name: rss-forwarder
+
+                    - name: MacOS x86_64
+                      os: macos-latest
+                      target: x86_64-apple-darwin
+                      bin_name: rss-forwarder
+
+                    - name: MacOS ARM64
+                      os: macos-latest
+                      target: aarch64-apple-darwin
+                      bin_name: rss-forwarder
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Install packages
+              if: ${{ matrix.platform.packages }}
+              run: sudo apt-get install -y ${{ matrix.platform.packages }}
+
+            - name: Setup Rust
+              run: |
+                rustup update
+                rustup default stable
+                rustup target add ${{ matrix.platform.target }}
+
+            - uses: actions/cache@v4
+              with:
+                path: |
+                  ~/.cargo/bin/
+                  ~/.cargo/registry/index/
+                  ~/.cargo/registry/cache/
+                  ~/.cargo/git/db/
+                  target/
+                key: ${{ runner.os }}-${{ matrix.platform.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-${{ matrix.platform.target }}-cargo-
+
+            - name: Get version
+              run: cargo --version --verbose
+                  
+            - name: Build
+              run: |
+                if [ -n "${{ matrix.platform.linker }}" ]; then
+                    export CARGO_TARGET_${{ matrix.platform.target_upper }}_LINKER=${{ matrix.platform.linker }}
+                    export CC_${{ matrix.platform.target_upper }}=${{ matrix.platform.CC }}
+                    export CXX_${{ matrix.platform.target_upper }}=${{ matrix.platform.CXX }}
+                fi
+                cargo build --release --verbose \
+                  --target ${{ matrix.platform.target }}
+
+            - name: Prepare artifacts
+              run: |
+                mkdir -p artifacts
+                if [ -d "target/${{ matrix.platform.target }}/release" ]; then
+                    cp target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin_name }} artifacts/
+                else
+                    cp target/release/${{ matrix.platform.bin_name }} artifacts/
+                fi
+                cd artifacts
+                shasum -a 256 ${{ matrix.platform.bin_name }} > ${{ matrix.platform.bin_name }}.sha256
+
+            - name: Upload artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: binary-${{ matrix.platform.target }}
+                  path: artifacts/*
+            
+            - name: Generate summary
+              run: |
+                HASH=$(cat artifacts/${{ matrix.platform.bin_name }}.sha256)
+                echo "### SHA256 Checksum" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "\`${HASH%% *}\`" >> $GITHUB_STEP_SUMMARY
+
+    release:
+        name: Release
+        permissions:
+            contents: write
+        needs: build
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Download artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: artifacts
+                  pattern: binary-*
+            
+            - name: Prepare release
+              run: |
+                mkdir -p release
+                cd artifacts
+                for d in *; do
+                    if [ -d "$d" ]; then
+                        name=${d#binary-}
+                        tar -czf "../release/$name.tar.gz" -C "$d" .
+                    fi
+                done
+
+            - name: Create release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                cd release
+                gh release create ${{ github.ref_name }} *.tar.gz \
+                  --title ${{ github.ref_name }} \
+                  --verify-tag --draft

@@ -18,20 +18,19 @@ Checks RSS/Atom feeds for new entries and forwards them to different targets (ca
 | [Slack](#slack-sink) | `slack` | Slack webhook |
 | [Custom](#custom-sink) | `custom` | JSON stream to stdin |
 
-## Installation
+## Supported platforms
 
-> [!NOTE]
-> Currently only **Linux x86_64** is officially supported. It may also work on other Unix-based platforms.
+| Platform | Architecture | Container image |
+| -------- | ------------ | :---------------: |
+| Linux | x86_64, aarch64 | ✅ |
+| macOS | x86_64, aarch64 | ❌ |
+| Windows | - | ❌ |
+
+## Installation
 
 ### Official binary
 
-[`jq`](https://stedolan.github.io/jq/) required!
-
-```BASH
-curl --proto '=https' --tlsv1.3 -LO "$(curl --proto '=https' --tlsv1.3 -sSf https://api.github.com/repos/morphy2k/rss-forwarder/releases/latest | jq -r ".assets[] | select(.name == \"rss-forwarder-linux-x86_64\") | .browser_download_url")"
-chmod +x rss-forwarder-linux-x86_64
-sudo mv rss-forwarder-linux-x86_64 /usr/local/bin/rss-forwarder
-```
+Download the binary from the [releases page](https://github.com/morphy2k/rss-forwarder/releases)
 
 ### Cargo
 
