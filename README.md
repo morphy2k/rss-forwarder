@@ -20,17 +20,19 @@ Checks RSS/Atom feeds for new entries and forwards them to different targets (ca
 
 ## Supported platforms
 
-| Platform | Architecture | Container image |
-| -------- | ------------ | :---------------: |
+| Platform | Architecture | Image* |
+| -------- | ------------ | :----: |
 | Linux | x86_64, aarch64 | ✅ |
 | macOS | x86_64, aarch64 | ❌ |
 | Windows | - | ❌ |
+
+*\* Indicates whether a container (Docker) image is available*
 
 ## Installation
 
 ### Official binary
 
-Download the binary from the [releases page](https://github.com/morphy2k/rss-forwarder/releases)
+You can download the latest binary from the [releases page](https://github.com/morphy2k/rss-forwarder/releases)
 
 ### Cargo
 
