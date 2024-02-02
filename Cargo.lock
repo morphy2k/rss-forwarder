@@ -1192,7 +1192,7 @@ dependencies = [
 
 [[package]]
 name = "rss-forwarder"
-version = "0.7.0-beta.3"
+version = "0.7.0"
 dependencies = [
  "async-trait",
  "atom_syndication",
