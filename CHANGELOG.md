@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.0
+
+_Changes since [v0.7.0-beta.3](#v070-beta3)_
+
+- Dependencies updated
+
 ## v0.7.0-beta.3
 
 - Binaries and container images for multiple platforms added [#181](https://github.com/morphy2k/rss-forwarder/pull/181)
