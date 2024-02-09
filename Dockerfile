@@ -1,4 +1,4 @@
-FROM rust:1.75.0-bookworm as builder
+FROM rust:1.76.0-bookworm as builder
 
 ENV PKG_CONFIG_ALLOW_CROSS=1
 
