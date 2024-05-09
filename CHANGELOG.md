@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.1
+
+- Dependencies updated
+
 ## v0.7.0
 
 _Changes since [v0.7.0-beta.3](#v070-beta3)_
