@@ -39,6 +39,28 @@ impl<'a> Feed {
         Ok(feed)
     }
 
+    pub fn read_rss_from<R>(reader: R) -> Result<Self, FeedError>
+    where
+        R: BufRead,
+    {
+        let channel = rss::Channel::read_from(reader)?;
+
+        debug!(format = "RSS", items = channel.items().len(), "parsed feed");
+
+        Ok(Self::Rss(channel))
+    }
+
+    pub fn read_atom_from<R>(reader: R) -> Result<Self, FeedError>
+    where
+        R: BufRead,
+    {
+        let feed = atom_syndication::Feed::read_from(reader)?;
+
+        debug!(format = "Atom", items = feed.entries().len(), "parsed feed");
+
+        Ok(Self::Atom(feed))
+    }
+
     pub fn title(&self) -> &str {
         match self {
             Feed::Rss(c) => &c.title,
