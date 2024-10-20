@@ -8,7 +8,7 @@ use crate::{
 use std::time::Duration;
 
 use chrono::{DateTime, FixedOffset};
-use reqwest::{Client, IntoUrl, Url};
+use reqwest::{header, Client, IntoUrl, Url};
 use tokio::sync::broadcast::Receiver;
 use tracing::{debug, error};
 
@@ -167,9 +167,21 @@ impl<T: Sink> Watcher<T> {
         debug!("fetching feed");
 
         let res = self.client.get(self.url.as_ref()).send().await?;
-        let body = res.error_for_status()?.bytes().await?;
 
-        let feed = Feed::read_from(&body[..])?;
+        let feed = match res.headers().get(header::CONTENT_TYPE) {
+            Some(v) if v.as_bytes().starts_with(b"application/rss+xml") => {
+                let body = res.error_for_status()?.bytes().await?;
+                Feed::read_rss_from(&body[..])?
+            }
+            Some(v) if v.as_bytes().starts_with(b"application/atom+xml") => {
+                let body = res.error_for_status()?.bytes().await?;
+                Feed::read_atom_from(&body[..])?
+            }
+            _ => {
+                let body = res.error_for_status()?.bytes().await?;
+                Feed::read_from(&body[..])?
+            }
+        };
 
         Ok(feed)
     }
