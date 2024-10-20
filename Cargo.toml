@@ -61,7 +61,7 @@ thiserror = "1"
 humantime-serde = "1"
 toml = "0.8"
 pico-args = "0.5"
-html2text = "0.12"
+html2text = "0.13"
 slack-bk = "0.1"
 
 # Optional dependencies

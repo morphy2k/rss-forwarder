@@ -5,15 +5,15 @@ use serde::Serialize;
 pub trait FeedItem<'a>: Sync {
     fn title(&'a self) -> Option<&str>;
 
-    fn title_as_text(&'a self) -> Option<String>;
+    fn title_as_text(&'a self) -> Result<Option<String>, html2text::Error>;
 
     fn description(&'a self) -> Option<&str>;
 
-    fn description_as_text(&'a self) -> Option<String>;
+    fn description_as_text(&'a self) -> Result<Option<String>, html2text::Error>;
 
     fn content(&'a self) -> Option<&str>;
 
-    fn content_as_text(&'a self) -> Option<String>;
+    fn content_as_text(&'a self) -> Result<Option<String>, html2text::Error>;
 
     fn link(&'a self) -> Option<&str>;
 
@@ -42,9 +42,10 @@ impl<'a> FeedItem<'a> for rss::Item {
     }
 
     #[inline]
-    fn title_as_text(&self) -> Option<String> {
+    fn title_as_text(&self) -> Result<Option<String>, html2text::Error> {
         self.title()
             .map(|s| html2text::from_read(s.as_bytes(), usize::MAX))
+            .transpose()
     }
 
     #[inline]
@@ -53,10 +54,10 @@ impl<'a> FeedItem<'a> for rss::Item {
     }
 
     #[inline]
-    fn description_as_text(&self) -> Option<String> {
-        self.description
-            .as_ref()
+    fn description_as_text(&self) -> Result<Option<String>, html2text::Error> {
+        self.description()
             .map(|s| html2text::from_read(s.as_bytes(), usize::MAX))
+            .transpose()
     }
 
     #[inline]
@@ -65,10 +66,10 @@ impl<'a> FeedItem<'a> for rss::Item {
     }
 
     #[inline]
-    fn content_as_text(&self) -> Option<String> {
-        self.content
-            .as_ref()
+    fn content_as_text(&self) -> Result<Option<String>, html2text::Error> {
+        self.content()
             .map(|s| html2text::from_read(s.as_bytes(), usize::MAX))
+            .transpose()
     }
 
     #[inline]
@@ -105,11 +106,11 @@ impl<'a> FeedItem<'a> for atom_syndication::Entry {
     }
 
     #[inline]
-    fn title_as_text(&self) -> Option<String> {
+    fn title_as_text(&self) -> Result<Option<String>, html2text::Error> {
         if self.title().r#type == TextType::Html {
-            html2text::from_read(self.title().value.as_bytes(), usize::MAX).into()
+            html2text::from_read(self.title().as_bytes(), usize::MAX).map(Some)
         } else {
-            Some(self.title().value.to_owned())
+            Ok(Some(self.title().to_string()))
         }
     }
 
@@ -122,15 +123,13 @@ impl<'a> FeedItem<'a> for atom_syndication::Entry {
     }
 
     #[inline]
-    fn description_as_text(&self) -> Option<String> {
-        if let Some(v) = self.summary() {
-            if v.r#type == TextType::Html {
-                html2text::from_read(v.value.as_bytes(), usize::MAX).into()
-            } else {
-                Some(v.value.to_owned())
+    fn description_as_text(&self) -> Result<Option<String>, html2text::Error> {
+        match self.summary() {
+            Some(v) if v.r#type == TextType::Html => {
+                html2text::from_read(v.as_bytes(), usize::MAX).map(Some)
             }
-        } else {
-            None
+            Some(v) => Ok(Some(v.value.clone())),
+            None => Ok(None),
         }
     }
 
@@ -143,17 +142,13 @@ impl<'a> FeedItem<'a> for atom_syndication::Entry {
     }
 
     #[inline]
-    fn content_as_text(&self) -> Option<String> {
-        if let Some(v) = self.content() {
-            if v.content_type() == Some("html") {
-                v.value
-                    .as_ref()
-                    .map(|v| html2text::from_read(v.as_bytes(), usize::MAX))
-            } else {
-                v.value.to_owned()
+    fn content_as_text(&self) -> Result<Option<String>, html2text::Error> {
+        match self.content().and_then(|v| v.value()) {
+            Some(v) if self.content().unwrap().content_type() == Some("html") => {
+                html2text::from_read(v.as_bytes(), usize::MAX).map(Some)
             }
-        } else {
-            None
+            Some(v) => Ok(Some(v.to_string())),
+            None => Ok(None),
         }
     }
 
@@ -221,7 +216,7 @@ impl<'a> FeedItem<'a> for Item<'a> {
     }
 
     #[inline]
-    fn title_as_text(&self) -> Option<String> {
+    fn title_as_text(&self) -> Result<Option<String>, html2text::Error> {
         match self {
             Item::Rss { item, .. } => <rss::Item as FeedItem>::title_as_text(item),
             Item::Atom { entry, .. } => <atom_syndication::Entry as FeedItem>::title_as_text(entry),
@@ -237,7 +232,7 @@ impl<'a> FeedItem<'a> for Item<'a> {
     }
 
     #[inline]
-    fn description_as_text(&self) -> Option<String> {
+    fn description_as_text(&self) -> Result<Option<String>, html2text::Error> {
         match self {
             Item::Rss { item, .. } => <rss::Item as FeedItem>::description_as_text(item),
             Item::Atom { entry, .. } => {
@@ -255,7 +250,7 @@ impl<'a> FeedItem<'a> for Item<'a> {
     }
 
     #[inline]
-    fn content_as_text(&self) -> Option<String> {
+    fn content_as_text(&self) -> Result<Option<String>, html2text::Error> {
         match self {
             Item::Rss { item, .. } => <rss::Item as FeedItem>::content_as_text(item),
             Item::Atom { entry, .. } => {
