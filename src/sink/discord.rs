@@ -1,5 +1,5 @@
 use crate::{
-    error::{Error, FeedError},
+    error::FeedError,
     feed::item::{FeedItem, TryFromItem},
     Result,
 };
@@ -58,7 +58,7 @@ impl Sink for Discord {
             let chunk = items[pos..(pos + limit).min(length)]
                 .iter()
                 .map(EmbedObject::try_from_item)
-                .collect::<Result<Vec<EmbedObject>>>()?;
+                .collect::<std::result::Result<Vec<EmbedObject>, FeedError>>()?;
 
             chunks.push(Body { embeds: chunk });
         }
@@ -111,18 +111,18 @@ impl<'a, T> TryFromItem<'a, T> for EmbedObject<'a>
 where
     T: FeedItem<'a>,
 {
-    type Error = Error;
+    type Error = FeedError;
 
     fn try_from_item(value: &'a T) -> std::result::Result<Self, Self::Error> {
         let embed = Self {
             title: value
-                .title_as_text()
+                .title_as_text()?
                 .ok_or_else(|| FeedError::Item("title is missing".to_string()))?,
-            description: value.description_as_text().unwrap_or_default(),
+            description: value.description_as_text()?.unwrap_or_default(),
             url: value.link().unwrap_or_default(),
             timestamp: value.date(),
-            author: EmbedAuthor::try_from_item(value)?,
-            footer: EmbedFooter::try_from_item(value)?,
+            author: EmbedAuthor::try_from_item(value).unwrap(),
+            footer: EmbedFooter::try_from_item(value).unwrap(),
             provider: PROVIDER,
         };
 
@@ -141,7 +141,7 @@ impl<'a, T> TryFromItem<'a, T> for EmbedAuthor<'a>
 where
     T: FeedItem<'a>,
 {
-    type Error = Error;
+    type Error = std::convert::Infallible;
 
     fn try_from_item(value: &'a T) -> std::result::Result<Self, Self::Error> {
         Ok(match value.authors().first() {
@@ -170,7 +170,7 @@ impl<'a, T> TryFromItem<'a, T> for EmbedFooter<'a>
 where
     T: FeedItem<'a>,
 {
-    type Error = Error;
+    type Error = std::convert::Infallible;
 
     fn try_from_item(value: &'a T) -> std::result::Result<Self, Self::Error> {
         Ok(Self {

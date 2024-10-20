@@ -1,5 +1,5 @@
 use crate::{
-    error::{Error, FeedError},
+    error::FeedError,
     feed::item::{FeedItem, TryFromItem},
     Result,
 };
@@ -58,7 +58,7 @@ impl Sink for Slack {
             let chunk = items[pos..(pos + limit).min(length)]
                 .iter()
                 .map(ItemBlockCollection::try_from_item)
-                .collect::<Result<Vec<ItemBlockCollection>>>()?
+                .collect::<std::result::Result<Vec<ItemBlockCollection>, FeedError>>()?
                 .into_iter()
                 .flatten()
                 .collect();
@@ -107,13 +107,13 @@ impl<'a, T> TryFromItem<'a, T> for ItemBlockCollection
 where
     T: FeedItem<'a>,
 {
-    type Error = Error;
+    type Error = FeedError;
 
     fn try_from_item(value: &'a T) -> std::result::Result<Self, Self::Error> {
         let header = Header {
             text: Text::PlainText(PlainText {
                 text: value
-                    .title_as_text()
+                    .title_as_text()?
                     .ok_or_else(|| FeedError::Item("title is missing".to_string()))?,
                 emoji: false,
             }),
@@ -123,7 +123,7 @@ where
         let section = Section {
             text: Text::PlainText(PlainText {
                 text: value
-                    .description_as_text()
+                    .description_as_text()?
                     .unwrap_or_else(|| "...".to_string()),
                 emoji: false,
             })

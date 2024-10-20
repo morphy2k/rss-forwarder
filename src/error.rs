@@ -26,4 +26,6 @@ pub enum FeedError {
     Rss(#[from] rss::Error),
     #[error("atom error: {0}")]
     Atom(#[from] atom_syndication::Error),
+    #[error("html2text error: {0}")]
+    Html2Text(#[from] html2text::Error),
 }
