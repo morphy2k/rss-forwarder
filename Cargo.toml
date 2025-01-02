@@ -57,7 +57,7 @@ tracing-subscriber = { version = "0.3", features = [
     "ansi",
     "json",
 ], default-features = false }
-thiserror = "1"
+thiserror = "2"
 humantime-serde = "1"
 toml = "0.8"
 pico-args = "0.5"
