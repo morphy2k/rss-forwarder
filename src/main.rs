@@ -4,13 +4,9 @@ mod feed;
 mod sink;
 mod watcher;
 
-use crate::{
-    config::{Config, Feed},
-    watcher::Watcher,
-};
+use crate::config::Config;
 
 use std::{
-    collections::HashMap,
     env,
     io::{stdout, IsTerminal},
     path::PathBuf,
@@ -25,13 +21,10 @@ use reqwest::{
     header::{self, HeaderMap, HeaderName, HeaderValue},
     Client,
 };
-use tokio::{
-    signal::unix::{signal, SignalKind},
-    sync::broadcast,
-    task::JoinSet,
-};
-use tracing::{debug, error, info};
+use tokio::signal::unix::{signal, SignalKind};
+use tracing::{debug, error};
 use tracing_subscriber::EnvFilter;
+use watcher::WatcherCollection;
 
 #[cfg(feature = "mimalloc")]
 #[global_allocator]
@@ -154,20 +147,28 @@ async fn main() -> Result<()> {
         }
     };
 
-    let client = build_client()?;
+    let watchers = WatcherCollection::try_from(config)?;
 
-    let mut tasks = watch_feeds(config.feeds, client)?;
-    let mut task_failed = false;
-    while let Some(res) = tasks.join_next().await {
-        let abort = if let Ok(r) = res { r.is_err() } else { true };
-        if abort && !task_failed {
-            tasks.abort_all();
-            task_failed = true;
+    let shutdown_handle = watchers.shutdown_handle();
+
+    tokio::spawn(async move {
+        let mut sig_int = signal(SignalKind::interrupt()).unwrap();
+        let mut sig_term = signal(SignalKind::terminate()).unwrap();
+
+        tokio::select! {
+            _ = sig_int.recv() => {},
+            _ = sig_term.recv() => {},
+        };
+
+        debug!("received termination signal");
+
+        if let Err(e) = shutdown_handle.send(()) {
+            error!("error while sending shutdown signal: {e}");
         }
-    }
+    });
 
-    if task_failed {
-        eprintln!("Terminate due to a faulty watcher");
+    if let Err(e) = watchers.wait().await {
+        error!("Error while waiting for watchers: {e}");
         process::exit(1);
     }
 
@@ -271,54 +272,4 @@ fn parse_env_filter(debug: bool, verbose: bool) -> EnvFilter {
             .expect("should be a valid directive"),
         (false, _, _) => EnvFilter::from_default_env(),
     }
-}
-
-fn watch_feeds(feeds: HashMap<String, Feed>, client: Client) -> Result<JoinSet<Result<()>>> {
-    let mut tasks = JoinSet::new();
-
-    let (tx, _) = broadcast::channel(feeds.len());
-
-    for (name, config) in feeds.into_iter() {
-        let sink = config.sink.sink(&client)?;
-        let watcher = Watcher::new(
-            config.url,
-            sink,
-            config.interval,
-            client.clone(),
-            config.retry_limit,
-        )?;
-
-        let rx = tx.subscribe();
-
-        tasks.spawn(async move {
-            info!("starting watcher for \"{name}\"");
-
-            if let Err(err) = watcher.watch(rx).await {
-                error!(
-                    feed = %name,
-                    error = %err,
-                    "shutting down watcher due to an error",
-                );
-                return Err(err);
-            }
-
-            Ok(())
-        });
-    }
-
-    tokio::spawn(async move {
-        let mut sig_int = signal(SignalKind::interrupt()).unwrap();
-        let mut sig_term = signal(SignalKind::terminate()).unwrap();
-
-        tokio::select! {
-            _ = sig_int.recv() => {},
-            _ = sig_term.recv() => {},
-        };
-
-        debug!("received termination signal");
-
-        tx.send(()).unwrap();
-    });
-
-    Ok(tasks)
 }

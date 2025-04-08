@@ -6,18 +6,21 @@ use crate::{feed::item::FeedItem, Result};
 
 use self::{custom::Custom, discord::Discord, slack::Slack};
 
+use std::fmt;
+
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::Deserialize;
+use url::Url;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "type")]
 pub enum SinkOptions {
     Discord {
-        url: String,
+        url: Url,
     },
     Slack {
-        url: String,
+        url: Url,
     },
     Custom {
         command: String,
@@ -41,12 +44,12 @@ impl SinkOptions {
 }
 
 #[async_trait]
-pub trait Sink {
+pub trait Sink: fmt::Debug + Send + Sync {
     async fn push<'a, T>(&self, items: &'a [T]) -> Result<()>
     where
         T: FeedItem<'a>;
 
-    async fn shutdown(mut self) -> Result<()>;
+    async fn shutdown(self) -> Result<()>;
 }
 
 #[derive(Debug)]

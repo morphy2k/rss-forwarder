@@ -1,18 +1,119 @@
+mod builder;
+
 use crate::{
-    error::Error,
+    build_client,
+    config::Config,
+    error::{ConfigError, Error, WatcherError},
     feed::{item::FeedItem, Feed},
-    sink::Sink,
+    sink::{AnySink, Sink},
     Result,
 };
 
 use std::time::Duration;
 
+use builder::WatcherBuilder;
 use chrono::{DateTime, FixedOffset};
-use reqwest::{Client, IntoUrl, Url};
-use tokio::sync::broadcast::Receiver;
-use tracing::{debug, error};
+use reqwest::{Client, Url};
+use tokio::{
+    sync::broadcast::{self, Receiver, Sender},
+    task::JoinSet,
+};
+use tracing::{debug, error, info};
 
 const DEFAULT_INTERVAL: Duration = Duration::from_secs(60);
+
+pub struct WatcherCollection<S: Sink> {
+    scheduled_watchers: Vec<Watcher<S>>,
+    kill_tx: Sender<()>,
+}
+
+impl<S: Sink + 'static> WatcherCollection<S> {
+    pub async fn wait(mut self) -> Result<()> {
+        let mut watchers = JoinSet::new();
+
+        for (idx, watcher) in self.scheduled_watchers.drain(..).enumerate() {
+            let rx = self.kill_tx.subscribe();
+
+            info!(
+                index = idx,
+                url = %watcher.url,
+                "starting watcher",
+            );
+
+            watchers.spawn(async move {
+                if let Err(err) = watcher.watch(rx).await {
+                    error!(
+                        index = idx,
+                        error = %err,
+                        "shutting down watcher due to an error",
+                    );
+                    return Err(err);
+                }
+
+                Ok(())
+            });
+        }
+
+        let mut failed = false;
+
+        while let Some(res) = watchers.join_next().await {
+            let abort = if let Ok(r) = res { r.is_err() } else { true };
+            if abort && !failed {
+                watchers.abort_all();
+                failed = true;
+            }
+        }
+
+        if failed {
+            return Err(WatcherError::Failed)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn shutdown_handle(&self) -> Sender<()> {
+        self.kill_tx.clone()
+    }
+}
+
+impl<S: Sink + 'static> From<Vec<Watcher<S>>> for WatcherCollection<S> {
+    fn from(watchers: Vec<Watcher<S>>) -> Self {
+        let (kill_tx, _) = broadcast::channel(watchers.len());
+
+        Self {
+            scheduled_watchers: watchers,
+            kill_tx,
+        }
+    }
+}
+
+impl TryFrom<Config> for WatcherCollection<AnySink> {
+    type Error = Error;
+
+    fn try_from(Config { default, feeds }: Config) -> Result<Self> {
+        let client = build_client()?;
+
+        let mut scheduled_watchers = Vec::new();
+
+        for feed in feeds.into_iter() {
+            let sink = feed
+                .sink
+                .unwrap_or(default.sink.clone().ok_or(ConfigError::MissingSink)?)
+                .sink(&client)?;
+
+            let watcher = WatcherBuilder::with_client(client.clone())
+                .url(feed.url)
+                .sink(sink)
+                .interval(feed.interval.unwrap_or(default.interval))
+                .retry_limit(feed.retry_limit.unwrap_or(default.retry_limit))
+                .build()?;
+
+            scheduled_watchers.push(watcher);
+        }
+
+        Ok(Self::from(scheduled_watchers))
+    }
+}
 
 #[derive(Debug)]
 pub struct Watcher<T: Sink> {
@@ -26,24 +127,6 @@ pub struct Watcher<T: Sink> {
 }
 
 impl<T: Sink> Watcher<T> {
-    pub fn new<U: IntoUrl>(
-        url: U,
-        sink: T,
-        interval: Option<Duration>,
-        client: Client,
-        retry_limit: usize,
-    ) -> Result<Self> {
-        Ok(Self {
-            url: url.into_url()?,
-            sink,
-            interval: interval.unwrap_or(DEFAULT_INTERVAL),
-            client,
-            retry_limit,
-            retries_left: retry_limit,
-            last_date: DateTime::default(),
-        })
-    }
-
     #[tracing::instrument(
         name = "watch",
         skip(self, kill),
