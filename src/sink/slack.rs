@@ -7,7 +7,7 @@ use crate::{
 use super::Sink;
 
 use async_trait::async_trait;
-use reqwest::{Client, IntoUrl, Url};
+use reqwest::{Client, Url};
 use serde::Serialize;
 use slack_bk::{
     blocks::{Block, Context, ContextElement, Divider, Header, Section},
@@ -24,11 +24,8 @@ pub struct Slack {
 }
 
 impl Slack {
-    pub fn new<T: IntoUrl>(url: T, client: Client) -> Result<Self> {
-        Ok(Self {
-            url: url.into_url()?,
-            client,
-        })
+    pub fn new(url: Url, client: Client) -> Result<Self> {
+        Ok(Self { url, client })
     }
 }
 

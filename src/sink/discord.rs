@@ -8,7 +8,7 @@ use super::Sink;
 
 use async_trait::async_trait;
 use chrono::{DateTime, FixedOffset};
-use reqwest::{Client, IntoUrl, Url};
+use reqwest::{Client, Url};
 use serde::Serialize;
 use tracing::debug;
 
@@ -24,11 +24,8 @@ pub struct Discord {
 }
 
 impl Discord {
-    pub fn new<T: IntoUrl>(url: T, client: Client) -> Result<Self> {
-        Ok(Self {
-            url: url.into_url()?,
-            client,
-        })
+    pub fn new(url: Url, client: Client) -> Result<Self> {
+        Ok(Self { url, client })
     }
 }
 

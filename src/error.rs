@@ -2,8 +2,12 @@
 pub enum Error {
     #[error("feed error: {0}")]
     Feed(#[from] FeedError),
+    #[error("config error: {0}")]
+    Config(#[from] ConfigError),
     #[error("sink error: {0}")]
     Sink(String),
+    #[error("watcher error: {0}")]
+    Watcher(#[from] WatcherError),
     #[error("json error: {0}")]
     Json(#[from] serde_json::error::Error),
     #[error("task error: {0}")]
@@ -28,4 +32,16 @@ pub enum FeedError {
     Atom(#[from] atom_syndication::Error),
     #[error("html2text error: {0}")]
     Html2Text(#[from] html2text::Error),
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum ConfigError {
+    #[error("no sink configured")]
+    MissingSink,
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum WatcherError {
+    #[error("watcher failed")]
+    Failed,
 }
