@@ -66,14 +66,26 @@ OPTIONS:
 
 The feed configuration is passed as a TOML file.
 
-### Feed
+### Default Settings
+
+The `default` section defines global settings that apply to all feeds:
+
+| Field        | Type | Required | Default | Description  |
+| -------------|:----:|:--------:|:--------:| ----------- |
+| `interval`  | string      | No | 60s |  Specifies the time interval between checks. E.g. `10m`, `3h`, `1d`. |
+| `retry_limit` | uint      | No | 10 |  Specifies the retries after certain errors. |
+| `sink` | object | No | | Default sink options to use for all feeds |
+
+### Feeds
+
+The `feeds` section is an array that contains individual feed configurations:
 
 | Field        | Type | Required | Default | Description  |
 | -------------|:----:|:--------:|:--------:| ----------- |
 | `url`      | string | Yes | | URL to the RSS feed |
-| `interval`  | string      | No | 60s |  Specifies the time interval between checks. E.g. `10m`, `3h`, `1d`. |
-| `retry_limit` | uint      | No | 10 |  Specifies the retries after certain errors. |
-| `sink` | object | Yes | | Sink options |
+| `interval`  | string      | No | From default |  Override the default interval for this feed |
+| `retry_limit` | uint      | No | From default |  Override the default retry limit for this feed |
+| `sink` | object | No | From default | Override sink options for this feed |
 
 ### Discord Sink
 
@@ -125,21 +137,31 @@ Streams feed items in [NDJSON](https://en.wikipedia.org/wiki/JSON_streaming#Line
 ### Config Example
 
 ```TOML
+# Default settings for all feeds
+[default]
+interval = "5m"
+retry_limit = 10
+
+# Default sink configuration
+[default.sink]
+type = "discord"
+url = "https://discord.com/api/webhooks/84175.../OZdejNBCL1..."
+
 # Feed 1
-[feeds.github-blog]
+[[feeds]]
 url = "https://github.blog/all.atom"
-interval = "10m"
-retry_limit = 5
-sink.type = "discord"
-sink.url = "https://discord.com/api/webhooks/84175.../OZdejNBCL1..."
+interval = "10m"  # Override default interval
+retry_limit = 5   # Override default retry limit
 
 # Feed 2
-[feeds.rust-blog]
+[[feeds]]
 url = "https://blog.rust-lang.org/feed.xml"
-interval = "1m"
+interval = "1m"   # Override default interval
+sink.type = "custom"  # Override default sink
+sink.command = "bash"
+sink.arguments = ["-c", "cat - >> ./rust-blog.log"]
 
-[feeds.rust-blog.sink]
-type = "custom"
-command = "bash"
-arguments = ["-c", "cat - >> ./rust-blog.log"]
+# Feed 3 - uses all default settings
+[[feeds]]
+url = "https://example.com/feed.xml"
 ```
