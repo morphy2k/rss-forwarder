@@ -93,7 +93,7 @@ jobs:
                 shasum -a 256 ${{ matrix.platform.bin_name }} > ${{ matrix.platform.bin_name }}.sha256
 
             - name: Upload artifacts
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v5
               with:
                   name: binary-${{ matrix.platform.target }}
                   path: artifacts/*
