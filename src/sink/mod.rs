@@ -2,7 +2,7 @@ pub mod custom;
 pub mod discord;
 pub mod slack;
 
-use crate::{feed::item::FeedItem, Result};
+use crate::{Result, feed::item::FeedItem};
 
 use self::{custom::Custom, discord::Discord, slack::Slack};
 
