@@ -15,11 +15,11 @@ exclude = ["/example", "/.github"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["mimalloc", "rustls-tls", "hickory-dns", "compression", "proxy"]
+default = ["mimalloc", "rustls", "hickory-dns", "compression", "proxy"]
 
 # HTTP client features
 native-tls = ["reqwest/native-tls"]
-rustls-tls = ["reqwest/rustls-tls"]
+rustls = ["reqwest/rustls"]
 hickory-dns = ["reqwest/hickory-dns"]
 compression = ["reqwest/deflate", "reqwest/brotli", "reqwest/gzip"]
 proxy = ["reqwest/socks"]
@@ -35,7 +35,7 @@ tokio = { version = "1.42", features = [
     "process",
     "parking_lot",
 ] }
-reqwest = { version = "0.12", features = [
+reqwest = { version = "0.13", features = [
     "json",
     "http2",
     "charset",
