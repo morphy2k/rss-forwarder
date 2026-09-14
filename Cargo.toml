@@ -59,7 +59,7 @@ tracing-subscriber = { version = "0.3", features = [
 ], default-features = false }
 thiserror = "2"
 humantime-serde = "1"
-toml = "0.8"
+toml = "1.1"
 pico-args = "0.5"
 html2text = "0.17"
 slack-bk = "0.1"
