@@ -1,4 +1,4 @@
-use crate::{sink::SinkOptions, Result};
+use crate::{Result, sink::SinkOptions};
 
 use std::{collections::HashMap, path::Path, time::Duration};
 

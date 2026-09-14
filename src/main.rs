@@ -12,7 +12,7 @@ use crate::{
 use std::{
     collections::HashMap,
     env,
-    io::{stdout, IsTerminal},
+    io::{IsTerminal, stdout},
     path::PathBuf,
     process,
     str::FromStr,
@@ -22,11 +22,11 @@ use std::{
 use error::Error;
 use pico_args::Arguments;
 use reqwest::{
-    header::{self, HeaderMap, HeaderName, HeaderValue},
     Client,
+    header::{self, HeaderMap, HeaderName, HeaderValue},
 };
 use tokio::{
-    signal::unix::{signal, SignalKind},
+    signal::unix::{SignalKind, signal},
     sync::broadcast,
     task::JoinSet,
 };

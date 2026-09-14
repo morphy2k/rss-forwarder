@@ -1,7 +1,7 @@
 use crate::{
+    Result,
     error::{Error, FeedError},
     feed::item::{Author, FeedItem, TryFromItem},
-    Result,
 };
 
 use super::Sink;

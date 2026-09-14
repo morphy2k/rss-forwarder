@@ -1,8 +1,8 @@
 use crate::{
-    error::Error,
-    feed::{item::FeedItem, Feed},
-    sink::Sink,
     Result,
+    error::Error,
+    feed::{Feed, item::FeedItem},
+    sink::Sink,
 };
 
 use std::time::Duration;

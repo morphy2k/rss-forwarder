@@ -3,26 +3,26 @@ use chrono::{DateTime, FixedOffset};
 use serde::Serialize;
 
 pub trait FeedItem<'a>: Sync {
-    fn title(&'a self) -> Option<&str>;
+    fn title(&'a self) -> Option<&'a str>;
 
     fn title_as_text(&'a self) -> Result<Option<String>, html2text::Error>;
 
-    fn description(&'a self) -> Option<&str>;
+    fn description(&'a self) -> Option<&'a str>;
 
     fn description_as_text(&'a self) -> Result<Option<String>, html2text::Error>;
 
-    fn content(&'a self) -> Option<&str>;
+    fn content(&'a self) -> Option<&'a str>;
 
     fn content_as_text(&'a self) -> Result<Option<String>, html2text::Error>;
 
-    fn link(&'a self) -> Option<&str>;
+    fn link(&'a self) -> Option<&'a str>;
 
     fn date(&'a self) -> DateTime<FixedOffset>;
 
-    fn authors(&'a self) -> Vec<Author>;
+    fn authors(&'a self) -> Vec<Author<'a>>;
 
     /// Feed metadata
-    fn source(&'a self) -> Option<&Source>;
+    fn source(&'a self) -> Option<&'a Source<'a>>;
 }
 
 pub trait TryFromItem<'a, T>
@@ -83,7 +83,7 @@ impl<'a> FeedItem<'a> for rss::Item {
     }
 
     #[inline]
-    fn authors(&self) -> Vec<Author> {
+    fn authors(&self) -> Vec<Author<'_>> {
         match self.author() {
             Some(v) => vec![Author {
                 name: v,
@@ -94,7 +94,7 @@ impl<'a> FeedItem<'a> for rss::Item {
         }
     }
 
-    fn source(&'a self) -> Option<&Source> {
+    fn source(&'a self) -> Option<&'a Source<'a>> {
         None
     }
 }
@@ -165,7 +165,7 @@ impl<'a> FeedItem<'a> for atom_syndication::Entry {
     }
 
     #[inline]
-    fn authors(&self) -> Vec<Author> {
+    fn authors(&self) -> Vec<Author<'_>> {
         self.authors()
             .iter()
             .map(|v| Author {
@@ -176,7 +176,7 @@ impl<'a> FeedItem<'a> for atom_syndication::Entry {
             .collect()
     }
 
-    fn source(&'a self) -> Option<&Source> {
+    fn source(&'a self) -> Option<&'a Source<'a>> {
         None
     }
 }
@@ -276,7 +276,7 @@ impl<'a> FeedItem<'a> for Item<'a> {
     }
 
     #[inline]
-    fn authors(&self) -> Vec<Author> {
+    fn authors(&self) -> Vec<Author<'_>> {
         match self {
             Item::Rss { item, .. } => <rss::Item as FeedItem>::authors(item),
             Item::Atom { entry, .. } => <atom_syndication::Entry as FeedItem>::authors(entry),
@@ -284,7 +284,7 @@ impl<'a> FeedItem<'a> for Item<'a> {
     }
 
     #[inline]
-    fn source(&'a self) -> Option<&Source> {
+    fn source(&'a self) -> Option<&'a Source<'a>> {
         match self {
             Item::Rss { source, .. } => Some(source),
             Item::Atom { source, .. } => Some(source),
