@@ -109,7 +109,7 @@ impl Sink for Custom {
         skip(self),
         fields(
             pid = self.process.id(),
-            commad = %self.command,
+            command = %self.command,
             arguments = %self.arguments.join(" "),
         ),
         level = "debug"
